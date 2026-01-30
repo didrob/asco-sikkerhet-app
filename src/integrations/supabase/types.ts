@@ -113,6 +113,101 @@ export type Database = {
         }
         Relationships: []
       }
+      procedure_attachments: {
+        Row: {
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          procedure_id: string
+          uploaded_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          procedure_id: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          procedure_id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_attachments_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procedure_comments: {
+        Row: {
+          block_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          parent_id: string | null
+          procedure_id: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          block_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          parent_id?: string | null
+          procedure_id: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          block_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          parent_id?: string | null
+          procedure_id?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "procedure_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procedure_comments_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procedure_completions: {
         Row: {
           completed_at: string
@@ -189,6 +284,44 @@ export type Database = {
           },
         ]
       }
+      procedure_revisions: {
+        Row: {
+          change_summary: string | null
+          changed_by: string | null
+          content_snapshot: Json
+          created_at: string | null
+          id: string
+          procedure_id: string
+          version: string
+        }
+        Insert: {
+          change_summary?: string | null
+          changed_by?: string | null
+          content_snapshot: Json
+          created_at?: string | null
+          id?: string
+          procedure_id: string
+          version: string
+        }
+        Update: {
+          change_summary?: string | null
+          changed_by?: string | null
+          content_snapshot?: Json
+          created_at?: string | null
+          id?: string
+          procedure_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_revisions_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procedure_views: {
         Row: {
           completed_read: boolean | null
@@ -226,46 +359,70 @@ export type Database = {
       }
       procedures: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          author_id: string | null
+          category: string | null
           content_blocks: Json
           created_at: string
           created_by: string | null
           description: string | null
+          document_number: string | null
           due_date: string | null
           id: string
           recurrence_interval: unknown
           required_for_roles: string[] | null
+          review_date: string | null
           site_id: string
           status: Database["public"]["Enums"]["procedure_status"]
+          tags: string[] | null
           title: string
           updated_at: string
+          version: string | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          author_id?: string | null
+          category?: string | null
           content_blocks?: Json
           created_at?: string
           created_by?: string | null
           description?: string | null
+          document_number?: string | null
           due_date?: string | null
           id?: string
           recurrence_interval?: unknown
           required_for_roles?: string[] | null
+          review_date?: string | null
           site_id: string
           status?: Database["public"]["Enums"]["procedure_status"]
+          tags?: string[] | null
           title: string
           updated_at?: string
+          version?: string | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          author_id?: string | null
+          category?: string | null
           content_blocks?: Json
           created_at?: string
           created_by?: string | null
           description?: string | null
+          document_number?: string | null
           due_date?: string | null
           id?: string
           recurrence_interval?: unknown
           required_for_roles?: string[] | null
+          review_date?: string | null
           site_id?: string
           status?: Database["public"]["Enums"]["procedure_status"]
+          tags?: string[] | null
           title?: string
           updated_at?: string
+          version?: string | null
         }
         Relationships: [
           {
