@@ -1,215 +1,227 @@
 
 
-# Reorganisert Navigasjon - Alt kurs under Kurs
+# Prosedyreoversikt med Statistikk og Drill-down
 
-## Problem
+## Problemanalyse
 
-Kurs-relaterte elementer er spredt over flere seksjoner:
+Nåværende prosedyreside viser kun en enkel liste. Det mangler:
 
-| Nåværende seksjon | Innhold |
-|-------------------|---------|
-| **OPPLÆRING** | Aktive kurs, Min opplæringshistorikk |
-| **ADMINISTRASJON** | Kurs, Grupper, Opplæringsoversikt |
-
-Dette er forvirrende - brukeren må lete to steder for å finne kurs-relatert funksjonalitet.
+| Mangler | Behov |
+|---------|-------|
+| **Antall prosedyrer** | Hvor mange prosedyrer finnes? |
+| **Publiseringsstatus** | Hvor mange er publisert vs utkast? |
+| **Fullføringsgrad** | Hvor mange brukere har fullført? |
+| **Sist oppdatert** | Hvilke prosedyrer er nylig oppdatert? |
+| **Min progresjon** | Personlig oversikt over fullførte/pågående |
 
 ---
 
-## Løsningsforslag: Tema-basert gruppering
+## Foreslått Løsning
 
-Reorganiserer navigasjonen slik at **alt som handler om kurs ligger under KURS**, og **alt som handler om prosedyrer ligger under PROSEDYRER**.
+### For vanlige brukere (`/procedures`)
 
-### Ny Struktur
+Legg til KPI-kort øverst som viser personlig status:
 
 ```text
-+----------------------------------+
-| PROSEDYRER                       |
-|   📄 Bla i prosedyrer            |  ← Alle brukere
-|   ⚙️ Administrer prosedyrer      |  ← Kun HMS/admin
-+----------------------------------+
-| KURS                             |
-|   📚 Mine kurs                   |  ← Alle brukere
-|   📜 Min kurshistorikk           |  ← Alle brukere
-|   ⚙️ Administrer kurs            |  ← Kun HMS/admin
-|   👥 Grupper                     |  ← Kun HMS/admin
-|   📊 Opplæringsoversikt          |  ← Kun HMS/admin
-+----------------------------------+
-| RAPPORTER                        |
-|   📊 Rapporter                   |  ← Kun HMS/admin
-+----------------------------------+
-| SYSTEM                           |
-|   👤 Brukere                     |  ← Kun global admin
-|   🏢 Lokasjoner                  |  ...
-|   ...                            |
-+----------------------------------+
+PROSEDYRER
++-----------------------------------------------------------+
+|  Mine prosedyrer  |  Fullført  |  Pågående  |  Ikke startet |
+|       8           |     5      |     2      |       1       |
+|                   |   62.5%    |            |               |
++-----------------------------------------------------------+
+
+[Liste over prosedyrer som i dag]
+```
+
+### For HMS/admin (`/procedures/manage`)
+
+Legg til en admin-oversikt med tabs og drill-down (inspirert av opplæringsoversikten):
+
+```text
+ADMINISTRER PROSEDYRER
++-----------------------------------------------------------+
+| Totalt | Publisert | Utkast | Fullføringer | Pågående |
+|   12   |     8     |   4    |     156      |    23    |
++-----------------------------------------------------------+
+
+[Prosedyreoversikt] [Fullføringsgrad] [Sist oppdatert]
+
+PROSEDYREOVERSIKT (klikkbar for detaljer)
++---------------------------------------------------------------+
+| Prosedyre         | Status     | Fullført | Rate   | Oppdatert |
+|-------------------|------------|----------|--------|-----------|
+| HMS Introduksjon  | Publisert  | 45/52    | 87%    | I dag     |
+| Brannøvelse       | Publisert  | 38/52    | 73%    | 3 dager   |
+| Førstehjelpskurs  | Utkast     | —        | —      | 1 uke     |
++---------------------------------------------------------------+
 ```
 
 ---
 
-## Detaljer
+## Del 1: KPI-kort for vanlige brukere
 
-### Fordeler
-
-| Før | Etter |
-|-----|-------|
-| Kurs spredt over 2 seksjoner | Alt kurs på ett sted |
-| "Administrasjon" blander prosedyrer og kurs | Klart skille per tema |
-| Forvirrende for nye brukere | Intuitiv navigasjon |
-
-### Navigasjonslogikk
-
-- **Vanlige brukere** ser: "Bla i prosedyrer" + "Mine kurs" + "Min kurshistorikk" + "Min profil"
-- **HMS/Supervisors** ser også: "Administrer prosedyrer" + "Administrer kurs" + "Grupper" + "Opplæringsoversikt" + "Rapporter"
-- **Global admin** ser også: "System"-seksjonen
-
-### Collapsible seksjoner
-
-Hver seksjon (PROSEDYRER, KURS, RAPPORTER, SYSTEM) blir collapsible med chevron-pil:
+Legger til statistikk-kort på `/procedures`-siden:
 
 ```text
-▼ KURS                        ← Klikk for å kollapse
-    Mine kurs
-    Min kurshistorikk
-    Administrer kurs          ← Kun synlig for HMS
-    Grupper                   ← Kun synlig for HMS
-    Opplæringsoversikt        ← Kun synlig for HMS
++----------------+----------------+----------------+----------------+
+| Prosedyrer     | Fullført       | Pågående       | Ikke startet   |
+| tilgjengelig   |                |                |                |
+|      8         |     5 (62%)    |      2         |      1         |
++----------------+----------------+----------------+----------------+
 ```
+
+- Bruker eksisterende `useProcedureStats` hook
+- Viser personlig progresjon (din status)
+- Fullføringsrate i prosent
 
 ---
 
-## Fil-endringer
+## Del 2: Utvidet Admin-oversikt
+
+For HMS-ansvarlige legges til:
+
+### KPI-kort (systemomfattende)
+- **Totalt prosedyrer** i systemet
+- **Publiserte** vs **Utkast**
+- **Totale fullføringer** (alle brukere)
+- **Gjennomsnittlig fullføringsrate**
+
+### Tabs
+1. **Prosedyrer** - Liste med handlingsknapper (eksisterende)
+2. **Fullføringsgrad** - Per prosedyre med drill-down
+3. **Sist oppdatert** - Sortert etter oppdateringsdato
+
+### Drill-down Sheet
+Ved klikk på en prosedyre vises:
+- Hvem har fullført
+- Hvem er pågående
+- Hvem har ikke startet
+- Siste aktivitet
+
+---
+
+## Del 3: Nye Filer
+
+| Fil | Beskrivelse |
+|-----|-------------|
+| `src/hooks/useProcedureOverview.ts` | Hook for admin-statistikk per prosedyre |
+| `src/components/procedure/ProcedureStatsCards.tsx` | KPI-kort for bruker |
+| `src/components/procedure/AdminProcedureStats.tsx` | KPI-kort for admin |
+| `src/components/procedure/ProcedureCompletionTable.tsx` | Tabell med fullføringsgrad |
+| `src/components/procedure/ProcedureDetailSheet.tsx` | Drill-down for en prosedyre |
+
+### Oppdaterte Filer
 
 | Fil | Endring |
 |-----|---------|
-| `src/components/layout/Sidebar.tsx` | Ny tema-basert struktur med collapsible seksjoner |
-| `src/components/layout/MobileNav.tsx` | Samme struktur for mobil |
+| `src/pages/Procedures.tsx` | Legge til KPI-kort øverst |
+| `src/pages/ManageProcedures.tsx` | Legge til admin-statistikk og tabs |
 
 ---
 
-## Teknisk Implementering
+## Del 4: Teknisk Implementering
 
-### NavSection-komponent (gjenbrukbar)
+### useProcedureOverview Hook
 
 ```typescript
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
+export interface ProcedureOverviewStats {
+  procedureId: string;
+  title: string;
+  status: 'published' | 'draft' | 'archived';
+  updatedAt: string;
+  totalUsers: number;       // Brukere på siten
+  completedCount: number;   // Antall fullføringer
+  inProgressCount: number;  // Antall pågående
+  completionRate: number;   // Prosent
+}
 
-function NavSection({ title, icon: Icon, defaultOpen = true, children }) {
+export function useProcedureOverview(siteId?: string) {
+  return useQuery({
+    queryKey: ['procedure-overview', siteId],
+    queryFn: async () => {
+      // Hent prosedyrer med fullførings- og progress-tall
+      // Beregn rates per prosedyre
+    }
+  });
+}
+```
+
+### ProcedureStatsCards (for vanlige brukere)
+
+```typescript
+function ProcedureStatsCards({ stats }: { stats: ProcedureStats }) {
   return (
-    <Collapsible defaultOpen={defaultOpen} className="space-y-1">
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-accent group">
-        <span className="flex items-center gap-1.5">
-          {Icon && <Icon className="h-3.5 w-3.5" />}
-          {title}
-        </span>
-        <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-1">
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
+    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <StatCard title="Tilgjengelig" value={stats.total} icon={FileText} />
+      <StatCard title="Fullført" value={stats.completed} icon={CheckCircle2} />
+      <StatCard title="Pågående" value={stats.inProgress} icon={Clock} />
+      <StatCard title="Ikke startet" value={stats.notStarted} icon={AlertCircle} />
+    </div>
   );
 }
 ```
 
-### Oppdatert Sidebar-struktur
+---
 
-```typescript
-{/* Dashboard - alltid synlig */}
-<NavLink to="/">Dashboard</NavLink>
-<NavLink to="/profile">Min profil</NavLink>
+## Del 5: Visuell Design
 
-{/* PROSEDYRER */}
-<NavSection title="Prosedyrer" icon={FileText}>
-  <NavLink to="/procedures">Bla i prosedyrer</NavLink>
-  {canManage && (
-    <NavLink to="/procedures/manage">Administrer prosedyrer</NavLink>
-  )}
-</NavSection>
+### Bruker-siden (`/procedures`)
 
-{/* KURS */}
-<NavSection title="Kurs" icon={BookOpen}>
-  <NavLink to="/training">Mine kurs</NavLink>
-  <NavLink to="/training/history">Min kurshistorikk</NavLink>
-  {canManage && (
-    <>
-      <NavLink to="/training/manage">Administrer kurs</NavLink>
-      <NavLink to="/training/groups">Grupper</NavLink>
-      <NavLink to="/training/overview">Opplæringsoversikt</NavLink>
-    </>
-  )}
-</NavSection>
+```text
++-----------------------------------------------------------+
+| Prosedyrer                                                |
+| Se og fullfør sikkerhetsprosedyrer tildelt din rolle      |
++-----------------------------------------------------------+
 
-{/* RAPPORTER - kun HMS */}
-{canManage && (
-  <NavSection title="Rapporter" icon={BarChart3}>
-    <NavLink to="/admin/reports">Rapporter</NavLink>
-  </NavSection>
-)}
++----------+----------+----------+----------+
+| Tilgj.   | Fullført | Pågående | Ikke     |
+|   8      |  5 (62%) |    2     | startet 1|
++----------+----------+----------+----------+
 
-{/* SYSTEM - kun admin */}
-{isAdmin && (
-  <NavSection title="System" icon={Cog}>
-    {/* ... admin-lenker */}
-  </NavSection>
-)}
+[Prosedyrekort 1]
+[Prosedyrekort 2]
+...
+```
+
+### Admin-siden (`/procedures/manage`)
+
+```text
++-----------------------------------------------------------+
+| Administrer prosedyrer              [+ Ny prosedyre]      |
+| Opprett, rediger og publiser sikkerhetsprosedyrer         |
++-----------------------------------------------------------+
+
++----------+----------+----------+----------+----------+
+| Totalt   | Publisert| Utkast   | Fullf.   | Snittrate|
+|   12     |    8     |    4     |   156    |   78%    |
++----------+----------+----------+----------+----------+
+
+[Prosedyrer] [Fullføringsgrad] [Sist oppdatert]
+
+(Tab-innhold med tabell + handlinger)
 ```
 
 ---
 
-## Visuell Sammenligning
+## Del 6: Implementeringsrekkefølge
 
-### Før (forvirrende)
-```text
-NAVIGASJON
-  Dashboard
-  Prosedyrer
-
-OPPLÆRING              ← Kurs-ting her
-  Aktive kurs
-  Min opplæringshistorikk
-
-Min profil
-
-ADMINISTRASJON         ← Og mer kurs-ting her!
-  Prosedyrer
-  Kurs                 ← Forvirrende duplikat
-  Grupper
-  Opplæringsoversikt
-  Rapporter
-```
-
-### Etter (ryddig)
-```text
-Dashboard
-Min profil
-
-▼ PROSEDYRER           ← Alt prosedyre-relatert
-    Bla i prosedyrer
-    Administrer prosedyrer (HMS)
-
-▼ KURS                 ← Alt kurs-relatert på ett sted!
-    Mine kurs
-    Min kurshistorikk
-    Administrer kurs (HMS)
-    Grupper (HMS)
-    Opplæringsoversikt (HMS)
-
-▼ RAPPORTER (HMS)
-    Rapporter
-
-▼ SYSTEM (Admin)
-    Brukere
-    ...
-```
+1. **useProcedureOverview hook** - Admin-statistikk
+2. **ProcedureStatsCards** - KPI-kort for brukere
+3. **Procedures.tsx oppdatering** - Legge til kort øverst
+4. **AdminProcedureStats** - KPI-kort for admin
+5. **ProcedureCompletionTable** - Fullføringsgrad per prosedyre
+6. **ProcedureDetailSheet** - Drill-down
+7. **ManageProcedures.tsx oppdatering** - Tabs og statistikk
 
 ---
 
 ## Resultat
 
-- **Tema-basert gruppering**: Alt kurs under KURS, alt prosedyre under PROSEDYRER
-- **Collapsible seksjoner**: Brukere kan skjule det de ikke trenger
-- **Ingen duplikater**: Tydelig navngiving
-- **Rollebasert synlighet**: Admin-lenker vises kun for de med tilgang
-- **Konsistent mobil/desktop**: Samme struktur i MobileNav
+- **Vanlige brukere**: Ser sin egen progresjon med 4 KPI-kort
+- **HMS/admin**: Får full oversikt over alle prosedyrer med:
+  - Systemstatistikk (totalt, publisert, utkast)
+  - Fullføringsgrad per prosedyre
+  - Drill-down til hvem som har fullført
+  - Sist oppdatert-visning
+- **Konsistent design**: Samme stil som opplæringsoversikten
 
