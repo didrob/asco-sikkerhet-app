@@ -906,7 +906,50 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_invitations_safe: {
+        Row: {
+          activated_at: string | null
+          email: string | null
+          expires_at: string | null
+          full_name: string | null
+          id: string | null
+          invited_at: string | null
+          invited_by: string | null
+          site_id: string | null
+          status: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          email?: string | null
+          expires_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          invited_at?: string | null
+          invited_by?: string | null
+          site_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          email?: string | null
+          expires_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          invited_at?: string | null
+          invited_by?: string | null
+          site_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_manage_procedures: {
