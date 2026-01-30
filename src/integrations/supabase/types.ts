@@ -14,16 +14,369 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      procedure_completions: {
+        Row: {
+          completed_at: string
+          expires_at: string | null
+          id: string
+          procedure_id: string
+          signature_storage_path: string | null
+          signature_text: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          expires_at?: string | null
+          id?: string
+          procedure_id: string
+          signature_storage_path?: string | null
+          signature_text?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          expires_at?: string | null
+          id?: string
+          procedure_id?: string
+          signature_storage_path?: string | null
+          signature_text?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_completions_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procedure_progress: {
+        Row: {
+          checkpoint_answers: Json | null
+          current_block_index: number
+          id: string
+          last_activity_at: string
+          procedure_id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          checkpoint_answers?: Json | null
+          current_block_index?: number
+          id?: string
+          last_activity_at?: string
+          procedure_id: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          checkpoint_answers?: Json | null
+          current_block_index?: number
+          id?: string
+          last_activity_at?: string
+          procedure_id?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_progress_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procedures: {
+        Row: {
+          content_blocks: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          recurrence_interval: unknown
+          required_for_roles: string[] | null
+          site_id: string
+          status: Database["public"]["Enums"]["procedure_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_blocks?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          recurrence_interval?: unknown
+          required_for_roles?: string[] | null
+          site_id: string
+          status?: Database["public"]["Enums"]["procedure_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_blocks?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          recurrence_interval?: unknown
+          required_for_roles?: string[] | null
+          site_id?: string
+          status?: Database["public"]["Enums"]["procedure_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedures_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          current_site_id: string | null
+          department: string | null
+          full_name: string | null
+          id: string
+          job_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          current_site_id?: string | null
+          department?: string | null
+          full_name?: string | null
+          id: string
+          job_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          current_site_id?: string | null
+          department?: string | null
+          full_name?: string | null
+          id?: string
+          job_title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_current_site_id_fkey"
+            columns: ["current_site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_attempts: {
+        Row: {
+          attempted_at: string
+          id: string
+          is_correct: boolean
+          procedure_id: string
+          question_id: string
+          selected_answer: string
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          is_correct: boolean
+          procedure_id: string
+          question_id: string
+          selected_answer: string
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          is_correct?: boolean
+          procedure_id?: string
+          question_id?: string
+          selected_answer?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          settings: Json | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_site_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_site_assignments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_manage_procedures: {
+        Args: { _site_id: string; _user_id: string }
+        Returns: boolean
+      }
+      get_user_sites: { Args: { _user_id: string }; Returns: string[] }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _site_id?: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_site_access: {
+        Args: { _site_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "operator" | "supervisor" | "viewer"
+      completion_status: "not_started" | "in_progress" | "completed" | "expired"
+      procedure_status: "draft" | "published" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +503,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "operator", "supervisor", "viewer"],
+      completion_status: ["not_started", "in_progress", "completed", "expired"],
+      procedure_status: ["draft", "published", "archived"],
+    },
   },
 } as const
