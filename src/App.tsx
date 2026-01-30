@@ -14,12 +14,18 @@ import Procedures from "./pages/Procedures";
 import ProcedureViewer from "./pages/ProcedureViewer";
 import ProcedureEditor from "./pages/ProcedureEditor";
 import ManageProcedures from "./pages/ManageProcedures";
+import Certificates from "./pages/Certificates";
+import CertificateViewer from "./pages/CertificateViewer";
+import VerifyCertificate from "./pages/VerifyCertificate";
 import AdminSites from "./pages/admin/AdminSites";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminRoles from "./pages/admin/AdminRoles";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
+import GovernanceDashboard from "./pages/governance/GovernanceDashboard";
+import AuditDeepDive from "./pages/governance/AuditDeepDive";
+import GovernanceCertificates from "./pages/governance/GovernanceCertificates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +52,9 @@ const App = () => (
             <Routes>
             <Route path="/auth" element={<Auth />} />
             
+            {/* Public verification route */}
+            <Route path="/verify/:id" element={<VerifyCertificate />} />
+            
             {/* Main routes */}
             <Route path="/" element={<ProtectedWithSite><Index /></ProtectedWithSite>} />
             <Route path="/profile" element={<ProtectedWithSite><Profile /></ProtectedWithSite>} />
@@ -57,6 +66,10 @@ const App = () => (
             <Route path="/procedures/:id" element={<ProtectedWithSite><ProcedureViewer /></ProtectedWithSite>} />
             <Route path="/procedures/:id/edit" element={<ProtectedWithSite><ProcedureEditor /></ProtectedWithSite>} />
             
+            {/* Certificate routes */}
+            <Route path="/certificates" element={<ProtectedWithSite><Certificates /></ProtectedWithSite>} />
+            <Route path="/certificates/:id" element={<ProtectedWithSite><CertificateViewer /></ProtectedWithSite>} />
+            
             {/* Admin routes */}
             <Route path="/admin/sites" element={<ProtectedWithSite><AdminSites /></ProtectedWithSite>} />
             <Route path="/admin/users" element={<ProtectedWithSite><AdminUsers /></ProtectedWithSite>} />
@@ -64,6 +77,11 @@ const App = () => (
             <Route path="/admin/reports" element={<ProtectedWithSite><AdminReports /></ProtectedWithSite>} />
             <Route path="/admin/roles" element={<ProtectedWithSite><AdminRoles /></ProtectedWithSite>} />
             <Route path="/admin/audit" element={<ProtectedWithSite><AdminAuditLog /></ProtectedWithSite>} />
+            
+            {/* Governance routes (for external_client and auditor roles) */}
+            <Route path="/governance" element={<ProtectedRoute><GovernanceDashboard /></ProtectedRoute>} />
+            <Route path="/governance/audit" element={<ProtectedRoute><AuditDeepDive /></ProtectedRoute>} />
+            <Route path="/governance/certificates" element={<ProtectedRoute><GovernanceCertificates /></ProtectedRoute>} />
             
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />

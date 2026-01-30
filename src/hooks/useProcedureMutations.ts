@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { logAudit } from '@/lib/audit';
 import type { Json } from '@/integrations/supabase/types';
 
 interface ContentBlock {
@@ -45,6 +46,15 @@ export function useCreateProcedure() {
         .single();
 
       if (error) throw error;
+
+      // Log to audit
+      await logAudit({
+        action: 'create',
+        resourceType: 'procedure',
+        resourceId: data.id,
+        metadata: { title: input.title, siteId: input.site_id },
+      });
+
       return data;
     },
     onSuccess: () => {
@@ -86,6 +96,15 @@ export function useUpdateProcedure() {
         .single();
 
       if (error) throw error;
+
+      // Log to audit
+      await logAudit({
+        action: 'update',
+        resourceType: 'procedure',
+        resourceId: data.id,
+        metadata: { title: input.title },
+      });
+
       return data;
     },
     onSuccess: (data) => {
@@ -113,12 +132,28 @@ export function useDeleteProcedure() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Get procedure title before deletion for audit
+      const { data: procedure } = await supabase
+        .from('procedures')
+        .select('title')
+        .eq('id', id)
+        .single();
+
       const { error } = await supabase
         .from('procedures')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+
+      // Log to audit
+      await logAudit({
+        action: 'delete',
+        resourceType: 'procedure',
+        resourceId: id,
+        metadata: { title: procedure?.title },
+      });
+
       return id;
     },
     onSuccess: () => {
@@ -153,6 +188,15 @@ export function usePublishProcedure() {
         .single();
 
       if (error) throw error;
+
+      // Log to audit
+      await logAudit({
+        action: 'publish',
+        resourceType: 'procedure',
+        resourceId: data.id,
+        metadata: { title: data.title },
+      });
+
       return data;
     },
     onSuccess: (data) => {

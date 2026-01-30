@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logAudit } from '@/lib/audit';
 import type { Enums } from '@/integrations/supabase/types';
 
 export interface RoleWithDetails {
@@ -161,6 +162,15 @@ export function useAssignRole() {
         .single();
 
       if (error) throw error;
+
+      // Log to audit
+      await logAudit({
+        action: 'assign',
+        resourceType: 'role',
+        resourceId: data.id,
+        metadata: { userId, siteId, role },
+      });
+
       return data;
     },
     onSuccess: () => {
@@ -177,12 +187,27 @@ export function useRemoveRole() {
 
   return useMutation({
     mutationFn: async (roleId: string) => {
+      // Get role details before deletion for audit
+      const { data: role } = await supabase
+        .from('user_roles')
+        .select('user_id, site_id, role')
+        .eq('id', roleId)
+        .single();
+
       const { error } = await supabase
         .from('user_roles')
         .delete()
         .eq('id', roleId);
 
       if (error) throw error;
+
+      // Log to audit
+      await logAudit({
+        action: 'remove',
+        resourceType: 'role',
+        resourceId: roleId,
+        metadata: role ? { userId: role.user_id, siteId: role.site_id, role: role.role } : undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all_roles'] });
@@ -216,6 +241,15 @@ export function useToggleRole() {
           .eq('id', currentRoleId);
 
         if (error) throw error;
+
+        // Log to audit
+        await logAudit({
+          action: 'remove',
+          resourceType: 'role',
+          resourceId: currentRoleId,
+          metadata: { userId, siteId, role },
+        });
+
         return { action: 'removed' as const };
       } else {
         // Add the role
@@ -230,6 +264,15 @@ export function useToggleRole() {
           .single();
 
         if (error) throw error;
+
+        // Log to audit
+        await logAudit({
+          action: 'assign',
+          resourceType: 'role',
+          resourceId: data.id,
+          metadata: { userId, siteId, role },
+        });
+
         return { action: 'added' as const, data };
       }
     },
@@ -241,3 +284,4 @@ export function useToggleRole() {
     },
   });
 }
+

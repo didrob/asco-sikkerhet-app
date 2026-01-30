@@ -79,3 +79,62 @@ export function useCanManageProcedures(siteId: string | null) {
     enabled: !!user && !!siteId,
   });
 }
+
+export function useIsAuditor() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['is_auditor', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user!.id)
+        .eq('role', 'auditor')
+        .maybeSingle();
+
+      if (error) throw error;
+      return !!data;
+    },
+    enabled: !!user,
+  });
+}
+
+export function useIsExternalClient() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['is_external_client', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user!.id)
+        .eq('role', 'external_client')
+        .maybeSingle();
+
+      if (error) throw error;
+      return !!data;
+    },
+    enabled: !!user,
+  });
+}
+
+export function useIsGovernanceUser() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['is_governance_user', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user!.id)
+        .in('role', ['auditor', 'external_client']);
+
+      if (error) throw error;
+      return data && data.length > 0;
+    },
+    enabled: !!user,
+  });
+}

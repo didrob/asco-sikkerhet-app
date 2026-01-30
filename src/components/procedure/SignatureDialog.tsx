@@ -10,8 +10,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eraser, Check, PenLine } from 'lucide-react';
+import { Eraser, Check, PenLine, ShieldCheck } from 'lucide-react';
 
 interface SignatureDialogProps {
   open: boolean;
@@ -33,6 +34,9 @@ export function SignatureDialog({
   const [hasDrawn, setHasDrawn] = useState(false);
   const [signatureText, setSignatureText] = useState('');
   const [activeTab, setActiveTab] = useState<'draw' | 'type'>('draw');
+  const [confirmed, setConfirmed] = useState(false);
+
+  const confirmationText = `Jeg bekrefter at jeg har lest og forstått "${procedureTitle}" og vil følge denne i mitt arbeid.`;
 
   // Initialize canvas
   useEffect(() => {
@@ -48,6 +52,7 @@ export function SignatureDialog({
         ctx.lineJoin = 'round';
       }
       setHasDrawn(false);
+      setConfirmed(false);
     }
   }, [open]);
 
@@ -127,9 +132,11 @@ export function SignatureDialog({
     }
   };
 
-  const canSubmit = activeTab === 'type' 
+  const hasSignature = activeTab === 'type' 
     ? signatureText.trim().length > 0 
     : hasDrawn;
+
+  const canSubmit = confirmed && hasSignature;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,12 +144,34 @@ export function SignatureDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PenLine className="h-5 w-5" />
-            Signer prosedyre
+            Bekreft og signer
           </DialogTitle>
           <DialogDescription>
-            Bekreft at du har fullført "{procedureTitle}" ved å signere nedenfor.
+            Fullfør prosedyren ved å bekrefte og signere nedenfor.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Compliance confirmation */}
+        <div className="flex items-start gap-3 p-4 border rounded-lg bg-primary/5 border-primary/20">
+          <Checkbox
+            id="confirmation"
+            checked={confirmed}
+            onCheckedChange={(checked) => setConfirmed(checked === true)}
+            className="mt-0.5"
+          />
+          <div className="space-y-1">
+            <label 
+              htmlFor="confirmation" 
+              className="text-sm leading-relaxed cursor-pointer font-medium"
+            >
+              {confirmationText}
+            </label>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" />
+              Denne bekreftelsen loggføres for compliance-formål.
+            </p>
+          </div>
+        </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'draw' | 'type')}>
           <TabsList className="grid w-full grid-cols-2">
