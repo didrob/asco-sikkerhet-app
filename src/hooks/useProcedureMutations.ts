@@ -19,6 +19,12 @@ interface ProcedureInput {
   content_blocks?: ContentBlock[];
   due_date?: string | null;
   required_for_roles?: string[] | null;
+  // New metadata fields
+  category?: string | null;
+  version?: string | null;
+  document_number?: string | null;
+  review_date?: string | null;
+  tags?: string[] | null;
 }
 
 export function useCreateProcedure() {
@@ -41,6 +47,12 @@ export function useCreateProcedure() {
           due_date: input.due_date || null,
           required_for_roles: input.required_for_roles || null,
           created_by: user.id,
+          // New metadata fields
+          category: input.category || null,
+          version: input.version || '1.0',
+          document_number: input.document_number || null,
+          review_date: input.review_date || null,
+          tags: input.tags || null,
         })
         .select()
         .single();
@@ -90,6 +102,12 @@ export function useUpdateProcedure() {
           content_blocks: (input.content_blocks || []) as unknown as Json,
           due_date: input.due_date || null,
           required_for_roles: input.required_for_roles || null,
+          // New metadata fields
+          category: input.category || null,
+          version: input.version || '1.0',
+          document_number: input.document_number || null,
+          review_date: input.review_date || null,
+          tags: input.tags || null,
         })
         .eq('id', id)
         .select()
