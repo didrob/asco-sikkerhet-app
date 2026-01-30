@@ -1,6 +1,7 @@
 import { LogOut, ChevronDown, User } from 'lucide-react';
 import { ThemeLogo } from '@/components/ThemeLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -21,8 +22,9 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card">
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-        {/* Logo and App Name */}
+        {/* Mobile Nav + Logo and App Name */}
         <div className="flex items-center gap-3">
+          <MobileNav />
           <ThemeLogo className="h-10 w-auto" />
           <div className="hidden sm:block">
             <h1 className="font-semibold text-foreground">ASCO Prosedyrehub</h1>

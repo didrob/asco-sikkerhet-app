@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +34,7 @@ function ProcedureCard({ procedure }: { procedure: ProcedureWithProgress }) {
   const StatusIcon = status.icon;
 
   return (
-    <Card className="transition-shadow hover:shadow-md">
+    <Card className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -152,7 +153,9 @@ export function ProcedureList() {
   return (
     <div className="space-y-4">
       {procedures.map(procedure => (
-        <ProcedureCard key={procedure.id} procedure={procedure} />
+        <Link key={procedure.id} to={`/procedures/${procedure.id}`} className="block">
+          <ProcedureCard procedure={procedure} />
+        </Link>
       ))}
     </div>
   );
