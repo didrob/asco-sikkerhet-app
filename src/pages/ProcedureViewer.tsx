@@ -1,14 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProcedure } from '@/hooks/useProcedure';
-import { useStartProcedure, useAdvanceBlock, useCompleteProcedure } from '@/hooks/useProcedureProgress';
-import { SignatureDialog } from '@/components/procedure/SignatureDialog';
+import { useProcedureAttachments } from '@/hooks/useProcedureAttachments';
+import { useProcedureComments } from '@/hooks/useProcedureComments';
+import { ExportMenu } from '@/components/procedure/ExportMenu';
+import { AttachmentsSection } from '@/components/procedure/AttachmentsSection';
+import { CommentsPanel } from '@/components/procedure/CommentsPanel';
+import { RevisionHistory } from '@/components/procedure/RevisionHistory';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { useLogProcedureView, useUpdateViewDuration } from '@/hooks/useProcedureViews';
@@ -16,29 +20,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowLeft, 
   FileText, 
-  Clock, 
-  CheckCircle2, 
   AlertCircle,
-  Play,
+  Edit,
+  Paperclip,
+  MessageSquare,
+  History,
   Calendar,
-  ChevronRight,
-  Eye
+  User,
+  Tag,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 
 interface ContentBlock {
   id: string;
-  type: 'text' | 'image' | 'video' | 'quiz' | 'checkpoint';
+  type: 'text' | 'heading' | 'image' | 'video' | 'list' | 'warning' | 'divider';
   content: {
     text?: string;
-    question?: string;
-    options?: string[];
-    correct?: number;
-    label?: string;
+    level?: number;
     url?: string;
     alt?: string;
     title?: string;
+    items?: string[];
   };
 }
 
@@ -63,24 +68,125 @@ function ProcedureViewerSkeleton() {
   );
 }
 
+function DocumentContent({ blocks }: { blocks: ContentBlock[] }) {
+  if (!blocks || blocks.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-8 text-center">
+        <FileText className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+        <p className="text-muted-foreground">
+          Denne prosedyren har ingen innhold ennå.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="prose prose-sm max-w-none dark:prose-invert">
+      {blocks.map((block, index) => {
+        switch (block.type) {
+          case 'heading': {
+            const level = block.content.level || 2;
+            const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
+            return (
+              <HeadingTag key={block.id} className="mt-6 first:mt-0">
+                {block.content.text}
+              </HeadingTag>
+            );
+          }
+          case 'text':
+            return (
+              <p key={block.id} className="my-3">
+                {block.content.text}
+              </p>
+            );
+          case 'warning':
+            return (
+              <div 
+                key={block.id} 
+                className="my-4 flex items-start gap-3 rounded-lg border border-yellow-300 bg-yellow-50 p-4 dark:border-yellow-700 dark:bg-yellow-950"
+              >
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-600" />
+                <span className="text-yellow-800 dark:text-yellow-200">
+                  {block.content.text}
+                </span>
+              </div>
+            );
+          case 'list':
+            return (
+              <ul key={block.id} className="my-3 list-disc pl-6">
+                {(block.content.items || []).map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            );
+          case 'image':
+            return (
+              <figure key={block.id} className="my-4">
+                {block.content.url ? (
+                  <img 
+                    src={block.content.url} 
+                    alt={block.content.alt || ''} 
+                    className="rounded-lg"
+                  />
+                ) : (
+                  <div className="flex h-32 items-center justify-center rounded-lg bg-muted">
+                    <span className="text-muted-foreground">{block.content.alt || 'Bilde'}</span>
+                  </div>
+                )}
+                {block.content.alt && (
+                  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+                    {block.content.alt}
+                  </figcaption>
+                )}
+              </figure>
+            );
+          case 'video':
+            return (
+              <div key={block.id} className="my-4">
+                <div className="flex h-48 items-center justify-center rounded-lg bg-muted">
+                  <span className="text-muted-foreground">
+                    Video: {block.content.title || 'Video'}
+                  </span>
+                </div>
+              </div>
+            );
+          case 'divider':
+            return <hr key={block.id} className="my-6" />;
+          default:
+            return null;
+        }
+      })}
+    </div>
+  );
+}
+
+const statusConfig = {
+  draft: {
+    label: 'Utkast',
+    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  },
+  published: {
+    label: 'Publisert',
+    className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  },
+  archived: {
+    label: 'Arkivert',
+    className: 'bg-muted text-muted-foreground',
+  },
+};
+
 export default function ProcedureViewer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentSite } = useSiteContext();
   const { user } = useAuth();
   const { data: procedure, isLoading, error } = useProcedure(id);
-  const { canExecuteProcedures, isViewer, isLoading: roleLoading } = useRoleAccess(currentSite?.id);
+  const { canManageProcedures } = useRoleAccess(currentSite?.id);
+  const { data: attachments } = useProcedureAttachments(id);
+  const { data: comments } = useProcedureComments(id);
   
-  const startProcedure = useStartProcedure();
-  const advanceBlock = useAdvanceBlock();
-  const completeProcedure = useCompleteProcedure();
   const logView = useLogProcedureView();
   const updateDuration = useUpdateViewDuration();
-  
-  const [showSignatureDialog, setShowSignatureDialog] = useState(false);
-  const [checkpointConfirmed, setCheckpointConfirmed] = useState(false);
-  const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
-  const [quizError, setQuizError] = useState(false);
   
   // View tracking
   const viewIdRef = useRef<string | null>(null);
@@ -88,7 +194,6 @@ export default function ProcedureViewer() {
   
   useEffect(() => {
     if (procedure?.id && user?.id && !viewIdRef.current) {
-      // Log the view
       logView.mutate(procedure.id, {
         onSuccess: (data) => {
           viewIdRef.current = data?.id || null;
@@ -97,7 +202,6 @@ export default function ProcedureViewer() {
       });
     }
     
-    // Update duration on unmount
     return () => {
       if (viewIdRef.current) {
         const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
@@ -136,77 +240,15 @@ export default function ProcedureViewer() {
   }
 
   const contentBlocks = (Array.isArray(procedure.content_blocks) ? procedure.content_blocks : []) as unknown as ContentBlock[];
-  const progress = procedure.progress;
-  const currentBlockIndex = progress?.current_block_index || 0;
-  const hasStarted = !!progress;
-  const isOnLastBlock = currentBlockIndex === contentBlocks.length - 1;
-  const currentBlock = contentBlocks[currentBlockIndex];
-
-  const handleStart = () => {
-    if (id) {
-      startProcedure.mutate(id);
-    }
-  };
-
-  const handleNext = () => {
-    if (!id || !currentBlock) return;
-    
-    // Validate quiz answer if current block is a quiz
-    if (currentBlock.type === 'quiz') {
-      if (selectedQuizAnswer !== currentBlock.content.correct) {
-        setQuizError(true);
-        return;
-      }
-    }
-    
-    // Validate checkpoint confirmation
-    if (currentBlock.type === 'checkpoint' && !checkpointConfirmed) {
-      return;
-    }
-
-    advanceBlock.mutate({
-      procedureId: id,
-      currentIndex: currentBlockIndex,
-      checkpointAnswer: currentBlock.type === 'checkpoint' 
-        ? { blockId: currentBlock.id, answer: true }
-        : currentBlock.type === 'quiz'
-        ? { blockId: currentBlock.id, answer: selectedQuizAnswer }
-        : undefined,
-    }, {
-      onSuccess: () => {
-        setCheckpointConfirmed(false);
-        setSelectedQuizAnswer(null);
-        setQuizError(false);
-      }
-    });
-  };
-
-  const handleComplete = (signatureText?: string, signatureBlob?: Blob) => {
-    if (!id) return;
-    completeProcedure.mutate({
-      procedureId: id,
-      signatureText,
-      signatureBlob,
-    }, {
-      onSuccess: () => {
-        setShowSignatureDialog(false);
-        navigate('/procedures');
-      }
-    });
-  };
-
-  const canProceed = () => {
-    if (!currentBlock) return false;
-    if (currentBlock.type === 'checkpoint') return checkpointConfirmed;
-    if (currentBlock.type === 'quiz') return selectedQuizAnswer !== null;
-    return true;
-  };
+  const status = statusConfig[procedure.status] || statusConfig.draft;
+  const attachmentCount = attachments?.length || 0;
+  const commentCount = comments?.length || 0;
 
   return (
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <Button
               variant="ghost"
@@ -216,244 +258,225 @@ export default function ProcedureViewer() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {procedure.document_number && (
+                  <span className="text-sm font-mono font-semibold text-primary">
+                    {procedure.document_number}
+                  </span>
+                )}
                 <h1 className="text-2xl font-bold text-foreground">
                   {procedure.title}
                 </h1>
-                <Badge variant={procedure.status === 'published' ? 'default' : 'secondary'}>
-                  {procedure.status === 'published' ? 'Publisert' : procedure.status}
+                <Badge className={status.className}>
+                  {status.label}
                 </Badge>
               </div>
-              {procedure.description && (
-                <p className="mt-1 text-muted-foreground">{procedure.description}</p>
-              )}
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                {procedure.version && <span>v{procedure.version}</span>}
+                {procedure.category && (
+                  <>
+                    <span>•</span>
+                    <span>{procedure.category}</span>
+                  </>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2">
+            <ExportMenu 
+              procedure={{
+                id: procedure.id,
+                title: procedure.title,
+                description: procedure.description || undefined,
+                category: procedure.category || undefined,
+                version: procedure.version || undefined,
+                documentNumber: procedure.document_number || undefined,
+                reviewDate: procedure.review_date || undefined,
+                tags: procedure.tags || undefined,
+                contentBlocks: contentBlocks as { id: string; type: string; content: Record<string, unknown> }[],
+              }}
+            />
+            {canManageProcedures && (
+              <Button variant="outline" asChild>
+                <Link to={`/procedures/edit/${procedure.id}`}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Rediger
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Meta info */}
-        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-          {procedure.due_date && (
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              Frist: {format(new Date(procedure.due_date), 'PPP', { locale: nb })}
-            </div>
-          )}
-          <div className="flex items-center gap-1">
-            <FileText className="h-4 w-4" />
-            {contentBlocks.length} steg
-          </div>
-          {hasStarted && (
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              Steg {currentBlockIndex + 1} av {contentBlocks.length}
-            </div>
-          )}
-        </div>
-
-        {/* Progress indicator */}
-        {contentBlocks.length > 0 && (
-          <div className="flex gap-1">
-            {contentBlocks.map((_, index) => (
-              <div
-                key={index}
-                className={`h-2 flex-1 rounded-full transition-colors ${
-                  index < currentBlockIndex
-                    ? 'bg-green-500'
-                    : index === currentBlockIndex && hasStarted
-                    ? 'bg-primary'
-                    : 'bg-muted'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Content - Show current block only when started */}
-        {hasStarted && currentBlock ? (
-          <Card className="border-primary">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Play className="h-5 w-5 text-primary" />
-                Steg {currentBlockIndex + 1} av {contentBlocks.length}
-              </CardTitle>
-              <CardDescription>
-                {currentBlock.type === 'text' && 'Les innholdet nedenfor'}
-                {currentBlock.type === 'checkpoint' && 'Bekreft at du har forstått'}
-                {currentBlock.type === 'quiz' && 'Svar på spørsmålet'}
-                {currentBlock.type === 'image' && 'Se bildet'}
-                {currentBlock.type === 'video' && 'Se videoen'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Text block */}
-              {currentBlock.type === 'text' && (
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <p>{(currentBlock.content as { text?: string }).text}</p>
-                </div>
+        {/* Tabs */}
+        <Tabs defaultValue="content" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="content" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Innhold
+            </TabsTrigger>
+            <TabsTrigger value="attachments" className="gap-2">
+              <Paperclip className="h-4 w-4" />
+              Vedlegg
+              {attachmentCount > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {attachmentCount}
+                </Badge>
               )}
-
-              {/* Checkpoint block */}
-              {currentBlock.type === 'checkpoint' && (
-                <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
-                  <Checkbox
-                    id="checkpoint"
-                    checked={checkpointConfirmed}
-                    onCheckedChange={(checked) => setCheckpointConfirmed(checked === true)}
-                  />
-                  <label
-                    htmlFor="checkpoint"
-                    className="cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {currentBlock.content.label}
-                  </label>
-                </div>
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Kommentarer
+              {commentCount > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {commentCount}
+                </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="gap-2">
+              <History className="h-4 w-4" />
+              Historikk
+            </TabsTrigger>
+          </TabsList>
 
-              {/* Quiz block */}
-              {currentBlock.type === 'quiz' && (
-                <div className="space-y-4">
-                  <p className="font-medium">
-                    {currentBlock.content.question}
-                  </p>
-                  <div className="space-y-2">
-                    {(currentBlock.content.options || []).map((option, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          setSelectedQuizAnswer(idx);
-                          setQuizError(false);
-                        }}
-                        className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                          selectedQuizAnswer === idx
-                            ? quizError
-                              ? 'border-destructive bg-destructive/10'
-                              : 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50 hover:bg-accent'
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                  {quizError && (
-                    <p className="text-sm text-destructive">
-                      Feil svar. Prøv igjen.
-                    </p>
+          {/* Content tab */}
+          <TabsContent value="content" className="space-y-6">
+            {/* Description */}
+            {procedure.description && (
+              <p className="text-muted-foreground italic">
+                {procedure.description}
+              </p>
+            )}
+
+            {/* Main content */}
+            <Card>
+              <CardContent className="p-6">
+                <DocumentContent blocks={contentBlocks} />
+              </CardContent>
+            </Card>
+
+            {/* Document info card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Dokumentinformasjon
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {procedure.category && (
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Kategori</p>
+                        <p className="font-medium">{procedure.category}</p>
+                      </div>
+                    </div>
+                  )}
+                  {procedure.document_number && (
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Dokumentnr</p>
+                        <p className="font-medium">{procedure.document_number}</p>
+                      </div>
+                    </div>
+                  )}
+                  {procedure.version && (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Versjon</p>
+                        <p className="font-medium">{procedure.version}</p>
+                      </div>
+                    </div>
+                  )}
+                  {procedure.review_date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Neste revisjon</p>
+                        <p className="font-medium">
+                          {format(new Date(procedure.review_date), 'd. MMMM yyyy', { locale: nb })}
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </div>
-              )}
 
-              {/* Image block */}
-              {currentBlock.type === 'image' && (
-                <div className="rounded-lg border bg-muted p-8 text-center">
-                  <FileText className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    {(currentBlock.content as { alt?: string }).alt || 'Bilde'}
-                  </p>
-                </div>
-              )}
-
-              {/* Video block */}
-              {currentBlock.type === 'video' && (
-                <div className="rounded-lg border bg-muted p-8 text-center">
-                  <Play className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    {(currentBlock.content as { title?: string }).title || 'Video'}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ) : !hasStarted && contentBlocks.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Oversikt
-              </CardTitle>
-              <CardDescription>
-                Denne prosedyren har {contentBlocks.length} steg. Klikk "Start prosedyre" for å begynne.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {contentBlocks.map((block, index) => (
-                  <li key={block.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                      {index + 1}
+                {/* Tags */}
+                {procedure.tags && procedure.tags.length > 0 && (
+                  <div className="mt-4 border-t pt-4">
+                    <p className="mb-2 text-xs text-muted-foreground">Tags</p>
+                    <div className="flex flex-wrap gap-2">
+                      {procedure.tags.map((tag, idx) => (
+                        <Badge key={idx} variant="outline">
+                          {tag}
+                        </Badge>
+                      ))}
                     </div>
-                    {block.type === 'text' && 'Informasjon'}
-                    {block.type === 'checkpoint' && 'Bekreftelse'}
-                    {block.type === 'quiz' && 'Quiz'}
-                    {block.type === 'image' && 'Bilde'}
-                    {block.type === 'video' && 'Video'}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <FileText className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                Denne prosedyren har ingen innhold ennå.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+                  </div>
+                )}
 
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          {!hasStarted && contentBlocks.length > 0 && (
-            canExecuteProcedures ? (
-              <Button 
-                size="lg" 
-                onClick={handleStart}
-                disabled={startProcedure.isPending || roleLoading}
-              >
-                <Play className="mr-2 h-5 w-5" />
-                {startProcedure.isPending ? 'Starter...' : 'Start prosedyre'}
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3 text-muted-foreground">
-                <Eye className="h-5 w-5" />
-                <span>Du har kun lesetilgang til denne prosedyren</span>
-              </div>
-            )
-          )}
-          {hasStarted && !isOnLastBlock && canExecuteProcedures && (
-            <Button 
-              size="lg" 
-              onClick={handleNext}
-              disabled={!canProceed() || advanceBlock.isPending}
-            >
-              {advanceBlock.isPending ? 'Lagrer...' : 'Neste steg'}
-              <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-          )}
-          {hasStarted && isOnLastBlock && canExecuteProcedures && (
-            <Button 
-              size="lg" 
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => setShowSignatureDialog(true)}
-              disabled={!canProceed()}
-            >
-              <CheckCircle2 className="mr-2 h-5 w-5" />
-              Fullfør prosedyre
-            </Button>
-          )}
-        </div>
+                {/* Last updated */}
+                <div className="mt-4 border-t pt-4 text-sm text-muted-foreground">
+                  <p>
+                    Sist oppdatert: {format(new Date(procedure.updated_at), 'd. MMMM yyyy, HH:mm', { locale: nb })}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Signature Dialog */}
-        <SignatureDialog
-          open={showSignatureDialog}
-          onOpenChange={setShowSignatureDialog}
-          onComplete={handleComplete}
-          isLoading={completeProcedure.isPending}
-          procedureTitle={procedure.title}
-        />
+          {/* Attachments tab */}
+          <TabsContent value="attachments">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Paperclip className="h-5 w-5" />
+                  Vedlegg
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AttachmentsSection procedureId={id} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Comments tab */}
+          <TabsContent value="comments">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Kommentarer
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CommentsPanel procedureId={id} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* History tab */}
+          <TabsContent value="history">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Revisjonshistorikk
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RevisionHistory 
+                  procedureId={id} 
+                  currentVersion={procedure.version || '1.0'} 
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
