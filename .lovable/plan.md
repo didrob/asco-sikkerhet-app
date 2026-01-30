@@ -1,82 +1,111 @@
 
 
-# Implementering Del 3 - Klikkbare Prosedyrer + Mobil Navigasjon
+# Implementering Del 4 - Profilfix, Rapporter og Admin-verktøy
 
 ## Oversikt
-Gjør prosedyrekort klikkbare slik at brukere kan åpne og lese prosedyrer, og legger til mobil-navigasjon med hamburger-meny.
+Denne delen fokuserer på å fikse profil-siden, legge til rapportering for admins/supervisors, og implementere funksjonelle innstillinger.
 
 ---
 
-## Del 1: Klikkbare Prosedyrekort
+## Del 1: Profilside-fix (Kritisk bug)
 
-**Problem**: Prosedyrekortene på `/procedures` er ikke klikkbare. Brukere kan ikke åpne prosedyrene for å lese dem.
+**Problem**: Profil-skjemaet laster ikke eksisterende data fordi `useState()` brukes feil som en effekt på linje 26.
 
-**Løsning**: Wrappe `ProcedureCard` med `Link` fra react-router-dom.
-
-### Endringer i `src/components/dashboard/ProcedureList.tsx`
-
-```text
-Før:
-<ProcedureCard key={procedure.id} procedure={procedure} />
-
-Etter:
-<Link to={`/procedures/${procedure.id}`}>
-  <ProcedureCard ... className="cursor-pointer hover:shadow-lg" />
-</Link>
+**Nåværende kode (feil)**:
+```typescript
+useState(() => {
+  if (profile) {
+    setFormData({...});
+  }
+});
 ```
 
-| Element | Endring |
+**Korrekt kode**:
+```typescript
+useEffect(() => {
+  if (profile) {
+    setFormData({
+      full_name: profile.full_name || '',
+      job_title: profile.job_title || '',
+      department: profile.department || '',
+    });
+  }
+}, [profile]);
+```
+
+---
+
+## Del 2: Admin Rapporter
+
+### Ny Side: `src/pages/admin/AdminReports.tsx`
+
+Rapporterings-dashboard for admins og supervisors med:
+
+| Seksjon | Innhold |
 |---------|---------|
-| Import | Legg til `Link` fra react-router-dom |
-| Wrapper | Pakk inn hver `ProcedureCard` i `Link` |
-| Styling | Legg til `cursor-pointer` og forbedret hover-effekt |
+| Fullføringsrate | Prosent fullførte prosedyrer per site |
+| Brukerstatistikk | Hvem har fullført/ikke fullført |
+| Tidslinje | Fullføringer over tid |
+| Eksport | Last ned data som CSV |
+
+### Ny Hook: `src/hooks/useReportData.ts`
+
+Henter aggregert data fra:
+- `procedures` - liste over prosedyrer
+- `procedure_completions` - fullføringsinformasjon
+- `profiles` - brukerinformasjon
+
+### Komponenter
+
+| Fil | Beskrivelse |
+|-----|-------------|
+| `CompletionRateChart.tsx` | Søylediagram med fullføringsrate |
+| `UserCompletionTable.tsx` | Tabell med brukere og status |
+| `ReportExportButton.tsx` | Eksporter til CSV |
 
 ---
 
-## Del 2: Mobil Navigasjon
+## Del 3: Innstillinger-funksjonalitet
 
-**Problem**: Sidebar er skjult på mobil (`hidden lg:block`), men det finnes ingen alternativ navigasjon.
+### Oppdater `AdminSettings.tsx`
 
-**Løsning**: Legge til hamburger-meny i AppHeader som åpner et Sheet med navigasjonslenker.
+| Seksjon | Funksjonalitet |
+|---------|----------------|
+| **Utseende** | Tema-valg (bygger på ThemeToggle) |
+| **Data** | CSV-eksport av prosedyrer og fullføringer |
+| **Varsler** | Placeholder med info om fremtidig funksjon |
+| **Sikkerhet** | Link til Supabase Auth for passordbytting |
 
-### Ny Komponent: `src/components/layout/MobileNav.tsx`
+### CSV-eksport
 
-Egen komponent som inneholder:
-- Sheet-komponent som glir inn fra venstre
-- Samme navigasjonslenker som Sidebar
-- Automatisk lukking ved navigasjon
-- Rollebasert visning (samme logikk som Sidebar)
-
-### Endringer i `src/components/layout/AppHeader.tsx`
-
-```text
-Før header-innhold:
-<div className="flex items-center gap-3">
-  <ThemeLogo .../>
-  ...
-</div>
-
-Etter:
-<div className="flex items-center gap-3">
-  <MobileNav />  <!-- Ny - vises kun på mobil -->
-  <ThemeLogo .../>
-  ...
-</div>
+```typescript
+function exportToCSV(data: any[], filename: string) {
+  const headers = Object.keys(data[0]).join(',');
+  const rows = data.map(row => Object.values(row).join(','));
+  const csv = [headers, ...rows].join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+}
 ```
 
-### MobileNav Komponent Struktur
+---
+
+## Del 4: Navigasjon-oppdatering
+
+### Legg til Rapporter i Sidebar og MobileNav
 
 ```text
-MobileNav
-├── Sheet
-│   ├── SheetTrigger (hamburger-ikon, kun synlig på mobil)
-│   └── SheetContent (side="left")
-│       ├── SheetHeader med logo/tittel
-│       └── nav med NavLink-er
-│           ├── Dashboard
-│           ├── Prosedyrer
-│           ├── Min profil
-│           └── (Admin-lenker hvis rolle tillater)
+Administrasjon
+├── Administrer prosedyrer (supervisor+)
+├── Rapporter ← NY (supervisor+)
+├── Sites (admin)
+├── Brukere (admin)
+└── Innstillinger (admin)
 ```
 
 ---
@@ -85,92 +114,100 @@ MobileNav
 
 | Fil | Handling | Beskrivelse |
 |-----|----------|-------------|
-| `src/components/dashboard/ProcedureList.tsx` | Oppdater | Klikkbare prosedyrekort med Link |
-| `src/components/layout/MobileNav.tsx` | Ny | Mobil hamburger-meny komponent |
-| `src/components/layout/AppHeader.tsx` | Oppdater | Importere og legge til MobileNav |
+| `src/pages/Profile.tsx` | Oppdater | Fix useEffect for å laste profildata |
+| `src/pages/admin/AdminReports.tsx` | Ny | Rapporterings-side |
+| `src/hooks/useReportData.ts` | Ny | Hook for å hente rapportdata |
+| `src/pages/admin/AdminSettings.tsx` | Oppdater | Funksjonelle innstillinger |
+| `src/components/layout/Sidebar.tsx` | Oppdater | Legg til Rapporter-lenke |
+| `src/components/layout/MobileNav.tsx` | Oppdater | Legg til Rapporter-lenke |
+| `src/App.tsx` | Oppdater | Ny rute for /admin/reports |
 
 ---
 
 ## Tekniske Detaljer
 
-### ProcedureList med klikkbare kort
+### useReportData Hook
 
 ```typescript
-import { Link } from 'react-router-dom';
+interface CompletionStats {
+  procedureId: string;
+  procedureTitle: string;
+  totalUsers: number;
+  completedCount: number;
+  completionRate: number;
+}
 
-// I ProcedureList return:
-{procedures.map(procedure => (
-  <Link 
-    key={procedure.id} 
-    to={`/procedures/${procedure.id}`}
-    className="block"
-  >
-    <ProcedureCard procedure={procedure} />
-  </Link>
-))}
+interface UserCompletion {
+  userId: string;
+  userName: string;
+  proceduresCompleted: number;
+  proceduresTotal: number;
+  lastCompletion: string | null;
+}
 
-// I ProcedureCard - forbedret hover:
-<Card className="transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
-```
+export function useCompletionStats(siteId: string) {
+  return useQuery({
+    queryKey: ['completion-stats', siteId],
+    queryFn: async () => {
+      // Hent prosedyrer, brukere og fullføringer
+      // Kalkuler statistikk
+    },
+  });
+}
 
-### MobileNav Komponent
-
-```typescript
-import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Menu } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { useIsAdmin, useCanManageProcedures } from '@/hooks/useUserRoles';
-import { useSiteContext } from '@/contexts/SiteContext';
-
-export function MobileNav() {
-  const [open, setOpen] = useState(false);
-  const location = useLocation();
-  
-  // Automatisk lukking ved navigasjon
-  useEffect(() => {
-    setOpen(false);
-  }, [location.pathname]);
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-72">
-        {/* Navigasjonslenker */}
-      </SheetContent>
-    </Sheet>
-  );
+export function useUserCompletions(siteId: string) {
+  return useQuery({
+    queryKey: ['user-completions', siteId],
+    queryFn: async () => {
+      // Hent bruker-spesifikk fullføringsdata
+    },
+  });
 }
 ```
 
----
+### AdminReports Komponent
 
-## Resultat Etter Implementering
-
-**Desktop**:
-- Prosedyrekort er klikkbare og navigerer til prosedyre-visning
-- Hover-effekt viser at kortene er interaktive
-
-**Mobil**:
-- Hamburger-meny vises øverst til venstre
-- Klikk åpner navigasjonsmeny fra venstre side
-- Samme navigasjonsmuligheter som på desktop
-- Menyen lukkes automatisk ved valg av side
-
-**Alle brukere**:
-- Kan klikke på prosedyrer for å lese dem
-- "Start prosedyre" og "Neste steg" funksjonalitet er allerede på plass i ProcedureViewer
+```text
+AdminReports
+├── Header med tittel og site-velger
+├── Stats-kort (totale tall)
+│   ├── Totalt fullført
+│   ├── Gjennomsnittlig fullføringsrate
+│   └── Brukere med 100% fullført
+├── Fullføringsrate-diagram (Recharts)
+├── Brukertabell med status
+└── Eksport-knapper
+```
 
 ---
 
 ## Implementeringsrekkefølge
 
-1. **Klikkbare prosedyrekort** - Oppdater ProcedureList.tsx
-2. **MobileNav komponent** - Ny fil med Sheet-basert meny
-3. **Integrer i AppHeader** - Legg til MobileNav
+1. **Profilfix** - Kritisk bug, rask fix
+2. **useReportData hook** - Data-grunnlag for rapporter
+3. **AdminReports side** - Rapporterings-UI
+4. **Navigasjon-oppdatering** - Legg til Rapporter-lenke
+5. **Innstillinger** - Funksjonelle innstillinger med eksport
+
+---
+
+## Tilgangskontroll
+
+| Side | admin | supervisor | operator | viewer |
+|------|-------|------------|----------|--------|
+| Rapporter | Full tilgang (alle sites) | Kun egen site | Ingen | Ingen |
+| Innstillinger | Ja | Nei | Nei | Nei |
+
+Rapporter-siden bruker eksisterende `useCanManageProcedures` hook for å sjekke tilgang til site-data.
+
+---
+
+## Resultat Etter Implementering
+
+- Profilsiden laster eksisterende data korrekt
+- Admins og supervisors har tilgang til rapportering
+- Fullføringsstatistikk per prosedyre og bruker
+- CSV-eksport av data
+- Funksjonelle innstillinger for tema og eksport
+- Rapporter-lenke i sidebar og mobil-meny
 
