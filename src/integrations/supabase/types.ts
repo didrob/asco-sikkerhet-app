@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_requests: {
+        Row: {
+          company: string | null
+          email: string
+          full_name: string | null
+          id: string
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          request_type: string
+          requested_at: string
+          status: string
+        }
+        Insert: {
+          company?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type?: string
+          requested_at?: string
+          status?: string
+        }
+        Update: {
+          company?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type?: string
+          requested_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       ai_access: {
         Row: {
           enabled: boolean | null
@@ -593,6 +632,53 @@ export type Database = {
             columns: ["assignment_id"]
             isOneToOne: false
             referencedRelation: "training_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_invitations: {
+        Row: {
+          activated_at: string | null
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          invited_at: string
+          invited_by: string | null
+          site_id: string | null
+          status: string
+          temporary_password: string
+        }
+        Insert: {
+          activated_at?: string | null
+          email: string
+          expires_at: string
+          full_name?: string | null
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          site_id?: string | null
+          status?: string
+          temporary_password: string
+        }
+        Update: {
+          activated_at?: string | null
+          email?: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          site_id?: string | null
+          status?: string
+          temporary_password?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
             referencedColumns: ["id"]
           },
         ]

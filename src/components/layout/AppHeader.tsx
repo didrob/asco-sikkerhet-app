@@ -1,4 +1,5 @@
-import { LogOut, ChevronDown, User } from 'lucide-react';
+import { ChevronDown, User, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ThemeLogo } from '@/components/ThemeLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -11,6 +12,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
@@ -18,6 +35,7 @@ export function AppHeader() {
   const { currentSite, sites, setCurrentSite } = useSiteContext();
 
   const displayName = profile?.full_name || user?.email || 'Bruker';
+  const initials = getInitials(displayName);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card">
@@ -72,19 +90,36 @@ export function AppHeader() {
           </div>
         )}
 
-        {/* User Info and Actions */}
+        {/* User Dropdown and Theme Toggle */}
         <div className="flex items-center gap-2">
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-medium text-foreground">{displayName}</p>
-            <p className="text-xs text-muted-foreground">Logget inn</p>
-          </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-            <User className="h-4 w-4 text-muted-foreground" />
-          </div>
           <ThemeToggle />
-          <Button variant="ghost" size="icon" onClick={signOut} title="Logg ut">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2 px-2">
+                <span className="hidden text-sm sm:inline">{displayName}</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                  {initials}
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>Min konto</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/profile" className="flex cursor-pointer items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Min profil
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Logg ut
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

@@ -82,3 +82,91 @@ export function generateBulkReminderEmail(
   
   return { subject, body };
 }
+
+/**
+ * Generates a welcome email for new users
+ */
+export function generateNewUserEmail(
+  fullName: string,
+  email: string,
+  tempPassword: string,
+  expiresAt: Date,
+  baseUrl?: string
+): { subject: string; body: string } {
+  const subject = 'Velkommen til ASCO Prosedyrehub - Din konto er klar';
+  
+  let body = `Hei ${fullName},\n\n`;
+  body += `Din konto i ASCO Prosedyrehub er opprettet.\n\n`;
+  body += `Innloggingsdetaljer:\n`;
+  body += `E-post: ${email}\n`;
+  body += `Midlertidig passord: ${tempPassword}\n\n`;
+  body += `Du må logge inn og endre passordet ditt innen `;
+  body += `${expiresAt.toLocaleDateString('nb-NO', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}.\n\n`;
+  body += `Logg inn her: ${baseUrl || window.location.origin}/auth\n\n`;
+  body += `Med vennlig hilsen,\nASCO`;
+  
+  return { subject, body };
+}
+
+/**
+ * Generates a password reset email
+ */
+export function generatePasswordResetEmail(
+  fullName: string,
+  email: string,
+  newPassword: string,
+  expiresAt: Date,
+  baseUrl?: string
+): { subject: string; body: string } {
+  const subject = 'ASCO Prosedyrehub - Nytt passord';
+  
+  let body = `Hei ${fullName},\n\n`;
+  body += `Et nytt passord er generert for din konto.\n\n`;
+  body += `E-post: ${email}\n`;
+  body += `Nytt passord: ${newPassword}\n\n`;
+  body += `Du må logge inn og endre passordet ditt innen `;
+  body += `${expiresAt.toLocaleDateString('nb-NO', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}.\n\n`;
+  body += `Logg inn her: ${baseUrl || window.location.origin}/auth\n\n`;
+  body += `Med vennlig hilsen,\nASCO`;
+  
+  return { subject, body };
+}
+
+/**
+ * Generates an email for bulk user import
+ */
+export function generateBulkImportEmail(
+  users: { email: string; fullName: string; tempPassword: string }[],
+  expiresAt: Date,
+  baseUrl?: string
+): { subject: string; body: string } {
+  const subject = 'ASCO Prosedyrehub - Nye brukerkontoer opprettet';
+  
+  let body = `Hei,\n\n`;
+  body += `Følgende brukerkontoer er opprettet i ASCO Prosedyrehub:\n\n`;
+  
+  users.forEach((user, index) => {
+    body += `${index + 1}. ${user.fullName}\n`;
+    body += `   E-post: ${user.email}\n`;
+    body += `   Passord: ${user.tempPassword}\n\n`;
+  });
+  
+  body += `Alle brukere må logge inn og endre passord innen `;
+  body += `${expiresAt.toLocaleDateString('nb-NO', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}.\n\n`;
+  body += `Logg inn her: ${baseUrl || window.location.origin}/auth\n\n`;
+  body += `Med vennlig hilsen,\nASCO`;
+  
+  return { subject, body };
+}
