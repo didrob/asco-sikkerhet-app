@@ -1,4 +1,5 @@
-import { Shield, LogOut, ChevronDown, User } from 'lucide-react';
+import { LogOut, ChevronDown, User } from 'lucide-react';
+import { ThemeLogo } from '@/components/ThemeLogo';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -21,11 +22,9 @@ export function AppHeader() {
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         {/* Logo and App Name */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <Shield className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <ThemeLogo className="h-10 w-auto" />
           <div className="hidden sm:block">
-            <h1 className="font-semibold text-foreground">Prosedyrehub</h1>
+            <h1 className="font-semibold text-foreground">ASCO Prosedyrehub</h1>
             <p className="text-xs text-muted-foreground">Digital sikkerhetsoperasjoner</p>
           </div>
         </div>
