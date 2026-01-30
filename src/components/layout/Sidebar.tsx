@@ -7,7 +7,8 @@ import {
   FileText,
   LayoutDashboard,
   BarChart3,
-  Crown
+  Crown,
+  Award
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsAdmin, useCanManageProcedures } from '@/hooks/useUserRoles';
@@ -42,6 +43,11 @@ export function Sidebar() {
           <NavLink to="/procedures" className={navLinkClasses}>
             <FileText className="h-4 w-4" />
             Prosedyrer
+          </NavLink>
+
+          <NavLink to="/certificates" className={navLinkClasses}>
+            <Award className="h-4 w-4" />
+            Mine sertifikater
           </NavLink>
 
           <NavLink to="/profile" className={navLinkClasses}>

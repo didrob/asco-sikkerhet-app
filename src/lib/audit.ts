@@ -8,6 +8,7 @@ export type AuditAction =
   | 'publish' 
   | 'archive' 
   | 'complete' 
+  | 'sign'
   | 'assign' 
   | 'remove';
 
@@ -74,6 +75,7 @@ export function formatAuditAction(action: string): string {
     publish: 'Publisert',
     archive: 'Arkivert',
     complete: 'Fullført',
+    sign: 'Signert',
     assign: 'Tildelt',
     remove: 'Fjernet',
   };

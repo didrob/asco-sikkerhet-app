@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { logAudit } from '@/lib/audit';
 import type { Json } from '@/integrations/supabase/types';
 
 export function useStartProcedure() {
@@ -145,6 +146,13 @@ export function useCompleteProcedure() {
         signatureStoragePath = fileName;
       }
 
+      // Get procedure details for audit
+      const { data: procedure } = await supabase
+        .from('procedures')
+        .select('title, updated_at')
+        .eq('id', procedureId)
+        .single();
+
       // Create completion record
       const { data, error } = await supabase
         .from('procedure_completions')
@@ -166,11 +174,25 @@ export function useCompleteProcedure() {
         .eq('procedure_id', procedureId)
         .eq('user_id', user.id);
 
+      // Log sign event to audit
+      await logAudit({
+        action: 'sign',
+        resourceType: 'procedure',
+        resourceId: procedureId,
+        metadata: {
+          procedure_title: procedure?.title,
+          procedure_version: procedure?.updated_at,
+          signature_type: signatureBlob ? 'drawn' : 'typed',
+          completion_id: data.id,
+        },
+      });
+
       return data;
     },
     onSuccess: (_, { procedureId }) => {
       queryClient.invalidateQueries({ queryKey: ['procedure', procedureId] });
       queryClient.invalidateQueries({ queryKey: ['procedures'] });
+      queryClient.invalidateQueries({ queryKey: ['user_completions'] });
       toast({
         title: 'Fullført!',
         description: 'Prosedyren er nå fullført og signert.',

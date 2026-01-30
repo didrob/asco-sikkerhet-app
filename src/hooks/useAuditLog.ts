@@ -7,6 +7,7 @@ export type AuditLogEntry = Tables<'audit_log'>;
 export interface AuditLogFilters {
   resourceType?: string;
   action?: string;
+  search?: string;
   startDate?: Date;
   endDate?: Date;
   limit?: number;
@@ -28,6 +29,10 @@ export function useAuditLog(filters?: AuditLogFilters) {
 
       if (filters?.action) {
         query = query.eq('action', filters.action);
+      }
+
+      if (filters?.search) {
+        query = query.or(`resource_id.ilike.%${filters.search}%,action.ilike.%${filters.search}%`);
       }
 
       if (filters?.startDate) {
