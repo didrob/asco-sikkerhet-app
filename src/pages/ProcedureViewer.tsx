@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useProcedure } from '@/hooks/useProcedure';
 import { useStartProcedure, useAdvanceBlock, useCompleteProcedure } from '@/hooks/useProcedureProgress';
 import { SignatureDialog } from '@/components/procedure/SignatureDialog';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { useSiteContext } from '@/contexts/SiteContext';
 import { 
   ArrowLeft, 
   FileText, 
@@ -17,7 +19,8 @@ import {
   AlertCircle,
   Play,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
@@ -61,7 +64,9 @@ function ProcedureViewerSkeleton() {
 export default function ProcedureViewer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { currentSite } = useSiteContext();
   const { data: procedure, isLoading, error } = useProcedure(id);
+  const { canExecuteProcedures, isViewer, isLoading: roleLoading } = useRoleAccess(currentSite?.id);
   
   const startProcedure = useStartProcedure();
   const advanceBlock = useAdvanceBlock();
@@ -370,16 +375,23 @@ export default function ProcedureViewer() {
         {/* Action buttons */}
         <div className="flex gap-3">
           {!hasStarted && contentBlocks.length > 0 && (
-            <Button 
-              size="lg" 
-              onClick={handleStart}
-              disabled={startProcedure.isPending}
-            >
-              <Play className="mr-2 h-5 w-5" />
-              {startProcedure.isPending ? 'Starter...' : 'Start prosedyre'}
-            </Button>
+            canExecuteProcedures ? (
+              <Button 
+                size="lg" 
+                onClick={handleStart}
+                disabled={startProcedure.isPending || roleLoading}
+              >
+                <Play className="mr-2 h-5 w-5" />
+                {startProcedure.isPending ? 'Starter...' : 'Start prosedyre'}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3 text-muted-foreground">
+                <Eye className="h-5 w-5" />
+                <span>Du har kun lesetilgang til denne prosedyren</span>
+              </div>
+            )
           )}
-          {hasStarted && !isOnLastBlock && (
+          {hasStarted && !isOnLastBlock && canExecuteProcedures && (
             <Button 
               size="lg" 
               onClick={handleNext}
@@ -389,7 +401,7 @@ export default function ProcedureViewer() {
               <ChevronRight className="ml-2 h-5 w-5" />
             </Button>
           )}
-          {hasStarted && isOnLastBlock && (
+          {hasStarted && isOnLastBlock && canExecuteProcedures && (
             <Button 
               size="lg" 
               className="bg-green-600 hover:bg-green-700"

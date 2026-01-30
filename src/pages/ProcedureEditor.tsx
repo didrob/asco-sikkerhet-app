@@ -18,12 +18,12 @@ import {
 import { useProcedure } from '@/hooks/useProcedure';
 import { useCreateProcedure, useUpdateProcedure, usePublishProcedure } from '@/hooks/useProcedureMutations';
 import { useSiteContext } from '@/contexts/SiteContext';
+import { ImageUploader } from '@/components/procedure/ImageUploader';
 import { 
   ArrowLeft, 
   Save,
   Eye,
   Trash2,
-  Plus,
   GripVertical,
   FileText,
   CheckSquare,
@@ -370,24 +370,13 @@ export default function ProcedureEditor() {
 
                       {/* Image block editor */}
                       {block.type === 'image' && (
-                        <div className="space-y-2">
-                          <Input
-                            placeholder="Bilde-URL"
-                            value={(block.content as { url?: string }).url || ''}
-                            onChange={(e) => updateBlock(block.id, { 
-                              ...block.content, 
-                              url: e.target.value 
-                            })}
-                          />
-                          <Input
-                            placeholder="Alternativ tekst (alt)"
-                            value={(block.content as { alt?: string }).alt || ''}
-                            onChange={(e) => updateBlock(block.id, { 
-                              ...block.content, 
-                              alt: e.target.value 
-                            })}
-                          />
-                        </div>
+                        <ImageUploader
+                          procedureId={id}
+                          currentUrl={(block.content as { url?: string }).url || ''}
+                          alt={(block.content as { alt?: string }).alt || ''}
+                          onUrlChange={(url) => updateBlock(block.id, { ...block.content, url })}
+                          onAltChange={(alt) => updateBlock(block.id, { ...block.content, alt })}
+                        />
                       )}
 
                       {/* Video block editor */}
