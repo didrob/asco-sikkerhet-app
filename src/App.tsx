@@ -28,6 +28,13 @@ import AuditDeepDive from "./pages/governance/AuditDeepDive";
 import GovernanceCertificates from "./pages/governance/GovernanceCertificates";
 import NotFound from "./pages/NotFound";
 
+// Training pages
+import Training from "./pages/training/Training";
+import TrainingHistory from "./pages/training/TrainingHistory";
+import ManageTraining from "./pages/training/ManageTraining";
+import TrainingGroups from "./pages/training/TrainingGroups";
+import TrainingOverview from "./pages/training/TrainingOverview";
+
 const queryClient = new QueryClient();
 
 // Wrapper component for protected routes with SiteProvider
@@ -66,7 +73,14 @@ const App = () => (
             <Route path="/procedures/:id" element={<ProtectedWithSite><ProcedureViewer /></ProtectedWithSite>} />
             <Route path="/procedures/:id/edit" element={<ProtectedWithSite><ProcedureEditor /></ProtectedWithSite>} />
             
-            {/* Certificate routes */}
+            {/* Training routes */}
+            <Route path="/training" element={<ProtectedWithSite><Training /></ProtectedWithSite>} />
+            <Route path="/training/history" element={<ProtectedWithSite><TrainingHistory /></ProtectedWithSite>} />
+            <Route path="/training/manage" element={<ProtectedWithSite><ManageTraining /></ProtectedWithSite>} />
+            <Route path="/training/groups" element={<ProtectedWithSite><TrainingGroups /></ProtectedWithSite>} />
+            <Route path="/training/overview" element={<ProtectedWithSite><TrainingOverview /></ProtectedWithSite>} />
+            
+            {/* Certificate routes (legacy - keeping for now) */}
             <Route path="/certificates" element={<ProtectedWithSite><Certificates /></ProtectedWithSite>} />
             <Route path="/certificates/:id" element={<ProtectedWithSite><CertificateViewer /></ProtectedWithSite>} />
             
