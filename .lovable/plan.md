@@ -1,228 +1,143 @@
 
 
-# Supabase Database Setup for ASCO Digital Safety Operations
+# Database Migrasjoner for ASCO Digital Safety Operations
 
-## Overview
-Complete database schema setup for manual Supabase connection, including all tables, Row Level Security policies, helper functions, and storage buckets needed for the multi-tenant safety operations platform.
-
----
-
-## Step 1: Connect Your Supabase Project
-
-Before we begin, you'll need to:
-1. Create a Supabase project at supabase.com (if you haven't already)
-2. Connect it to Lovable via the Supabase integration button
-3. Once connected, I'll create all the database migrations
+## Oversikt
+Jeg vil nå opprette alle database-migrasjonene for å sette opp det komplette multi-tenant skjemaet for sikkerhetsoperasjonsplattformen. Migrasjonene vil bli kjørt i riktig rekkefølge for å sikre at avhengigheter håndteres korrekt.
 
 ---
 
-## Step 2: Core Types & Enums
+## Migrasjonsplan
 
-### App Roles Enum
-```sql
-create type public.app_role as enum ('admin', 'operator', 'supervisor', 'viewer');
-```
+### Migrasjon 1: Enums og Security Functions
+Oppretter grunnleggende typer og sikkerhetsfunksjoner som brukes av alle andre tabeller.
 
-### Procedure Status Enum
-```sql
-create type public.procedure_status as enum ('draft', 'published', 'archived');
-```
-
-### Completion Status Enum
-```sql
-create type public.completion_status as enum ('not_started', 'in_progress', 'completed', 'expired');
-```
+**Innhold:**
+- `app_role` enum (admin, operator, supervisor, viewer)
+- `procedure_status` enum (draft, published, archived)
+- `completion_status` enum (not_started, in_progress, completed, expired)
+- `has_role()` security definer funksjon
+- `has_site_access()` security definer funksjon
+- `get_user_sites()` security definer funksjon
 
 ---
 
-## Step 3: Multi-Tenant Sites Table
+### Migrasjon 2: Sites og User Tables
+Oppretter multi-tenant grunnlag og brukerhåndtering.
 
-### Sites Table
-- `id`, `name`, `location`, `settings` (JSONB for flexibility)
-- RLS: Users can only read sites they're assigned to
+**Tabeller:**
+- `sites` - Multi-tenant site-struktur
+  - id, name, location, settings (JSONB), active, created_at, updated_at
+  
+- `profiles` - Brukerprofiler
+  - id (refererer til auth.users), full_name, avatar_url, job_title, department, current_site_id, created_at, updated_at
+  
+- `user_roles` - Rolletildelinger (sikkerhetskritisk)
+  - id, user_id, site_id, role (app_role enum)
+  - Unique constraint på (user_id, site_id, role)
+  
+- `user_site_assignments` - Hvilke sites brukeren har tilgang til
+  - id, user_id, site_id, assigned_at, assigned_by
 
----
-
-## Step 4: User Management Tables
-
-### Profiles Table
-- Links to `auth.users`
-- Fields: `full_name`, `avatar_url`, `job_title`, `department`
-- `current_site_id` - active site context
-- Trigger to auto-create profile on signup
-
-### User Roles Table (Security Critical)
-- Separate table to prevent privilege escalation
-- Links user to role with `site_id` context
-- Security definer function `has_role()` for safe RLS checks
-
-### User Site Assignments
-- Junction table linking users to their allowed sites
-- Enables multi-site access for supervisors/admins
+**RLS Policies:**
+- Sites: SELECT for tilordnede brukere, CRUD for admins
+- Profiles: SELECT egen + kolleger, UPDATE egen
+- User Roles: Kun via security definer funksjon
+- Site Assignments: SELECT egen, CRUD for admins
 
 ---
 
-## Step 5: Procedures & Content Tables
+### Migrasjon 3: Procedures
+Oppretter prosedyre-tabellen med JSONB innholdsstruktur.
 
-### Procedures Table
-- `site_id` for multi-tenancy
-- `title`, `description`, `status`
-- `content_blocks` (JSONB) - flexible content structure
-- `required_for_roles` - which roles must complete this
-- `due_date`, `recurrence_interval`
+**Tabell:**
+- `procedures`
+  - id, site_id, title, description, status (procedure_status)
+  - content_blocks (JSONB) - fleksibel innholdsstruktur
+  - required_for_roles (text[]) - hvilke roller må fullføre
+  - due_date, recurrence_interval (interval)
+  - created_by, created_at, updated_at
 
-### Content Block Structure (JSONB)
-```json
-[
-  { "type": "heading", "level": 1, "text": "Sikkerhetsprosedyre" },
-  { "type": "paragraph", "text": "..." },
-  { "type": "image", "url": "...", "alt": "..." },
-  { "type": "video", "url": "...", "poster": "..." },
-  { "type": "checkpoint", "question": "...", "options": [...], "correct": 0 }
-]
-```
+**RLS Policies:**
+- SELECT: Basert på site-tilordning og rolle
+- INSERT/UPDATE/DELETE: Admins og supervisors
 
 ---
 
-## Step 6: Quiz & Progress Tables
+### Migrasjon 4: Progress, Completions og Audit
+Oppretter tabeller for fremgang, fullføringer og revisjonsspor.
 
-### Procedure Progress
-- Tracks user's position in a procedure
-- `current_block_index`, `checkpoint_answers` (JSONB)
-- `started_at`, `last_activity_at`
+**Tabeller:**
+- `procedure_progress` - Brukerens posisjon i en prosedyre
+  - id, user_id, procedure_id, current_block_index
+  - checkpoint_answers (JSONB), started_at, last_activity_at
+  
+- `quiz_attempts` - Registrerer hvert spørsmålsforsøk
+  - id, user_id, procedure_id, question_id
+  - selected_answer, is_correct, attempted_at
+  
+- `procedure_completions` - Signaturer og fullføringer
+  - id, user_id, procedure_id
+  - signature_text, signature_storage_path
+  - completed_at, expires_at
+  
+- `audit_log` - Uforanderlig revisjonslogg
+  - id, user_id, action, resource_type, resource_id
+  - metadata (JSONB), ip_address, created_at
 
-### Quiz Attempts
-- Records each checkpoint question attempt
-- `question_id`, `selected_answer`, `is_correct`
-- For analytics and retry logic
-
----
-
-## Step 7: Signatures & Compliance
-
-### Procedure Completions
-- Records when a user signs off a procedure
-- `signature_text` - "Jeg bekrefter at innholdet er forstått"
-- `signature_data` - optional drawn signature (base64 reference)
-- `completed_at` - timestamp for audit
-- `expires_at` - for recurring certifications
-
-### Audit Log
-- Immutable record of all significant actions
-- `user_id`, `action`, `resource_type`, `resource_id`
-- `metadata` (JSONB), `ip_address`, `created_at`
-- Insert-only policy (no updates/deletes)
+**RLS Policies:**
+- Progress: CRUD for egen bruker
+- Completions: SELECT egen + site for admins, INSERT egen, ingen UPDATE/DELETE
+- Audit: SELECT for admins, INSERT for autentiserte, ingen UPDATE/DELETE
 
 ---
 
-## Step 8: Security Functions
+### Migrasjon 5: Storage Buckets
+Oppretter lagringsbøtter for media og signaturer.
 
-### has_role() Function
-```sql
--- Security definer to prevent RLS recursion
-create function public.has_role(_user_id uuid, _role app_role)
-returns boolean
-security definer
-```
+**Buckets:**
+- `avatars` - Offentlig, for profilbilder
+- `procedure-media` - Offentlig, for prosedyre-bilder og videoer
+- `signatures` - Privat, for tegnede signaturer
 
-### has_site_access() Function
-```sql
--- Check if user can access a specific site
-create function public.has_site_access(_user_id uuid, _site_id uuid)
-returns boolean
-security definer
-```
-
-### get_user_sites() Function
-```sql
--- Get all sites a user has access to
-create function public.get_user_sites(_user_id uuid)
-returns setof uuid
-security definer
-```
+**RLS Policies:**
+- Avatars: Upload/update egen, alle kan lese
+- Procedure Media: Admins kan laste opp, alle autentiserte kan lese
+- Signatures: Upload egen, admins kan lese alle
 
 ---
 
-## Step 9: Row Level Security Policies
+### Migrasjon 6: Triggers
+Oppretter automatiske triggere for profilering og tidsstempling.
 
-### Sites
-- SELECT: Users can view sites they're assigned to
-- INSERT/UPDATE/DELETE: Admins only
-
-### Profiles
-- SELECT: Own profile + same-site colleagues for admins
-- UPDATE: Own profile only
-
-### User Roles
-- SELECT: Via security definer function
-- INSERT/UPDATE/DELETE: Admins only
-
-### Procedures
-- SELECT: Based on site assignment and role
-- INSERT/UPDATE/DELETE: Admins and supervisors
-
-### Completions
-- SELECT: Own completions + site completions for admins
-- INSERT: Own completions only
-- UPDATE/DELETE: None (immutable for audit)
-
-### Audit Log
-- SELECT: Admins only
-- INSERT: Authenticated users (via functions)
-- UPDATE/DELETE: None (immutable)
+**Triggers:**
+- `handle_new_user` - Auto-oppretter profil ved brukerregistrering
+- `update_updated_at` - Auto-oppdaterer `updated_at` på alle tabeller
 
 ---
 
-## Step 10: Storage Buckets
+## Teknisk Implementering
 
-### Avatars Bucket
-- Public bucket for user profile pictures
-- RLS: Users can upload/update own avatar
+Migrasjonene vil bli opprettet som separate SQL-filer i riktig rekkefølge:
 
-### Procedure Media Bucket
-- Public bucket for procedure images/videos
-- RLS: Admins can upload, all authenticated can read
-
-### Signatures Bucket
-- Private bucket for drawn signatures
-- RLS: Users can upload own, admins can read all
+1. `001_enums_and_functions.sql` - Enums og security definer funksjoner
+2. `002_sites_and_users.sql` - Sites, profiles, roles, assignments med RLS
+3. `003_procedures.sql` - Prosedyrer med JSONB innhold
+4. `004_progress_and_completions.sql` - Progress, completions, audit log
+5. `005_storage_buckets.sql` - Lagringsbøtter med policies
+6. `006_triggers.sql` - Auto-profilering og timestamp-triggere
 
 ---
 
-## Step 11: Database Triggers
+## Etter Migrasjonene
 
-### Auto-create Profile
-- On `auth.users` insert, create matching profile
+Når alle migrasjonene er kjørt, vil Supabase-prosjektet ha:
+- Komplett multi-tenant databaseskjema
+- Sikker rollebasert tilgangskontroll
+- Fleksibel JSONB-struktur for prosedyreinnhold
+- Revisjonsspor for compliance
+- Lagring for media og signaturer
+- Alle RLS-policyer konfigurert
 
-### Update Timestamps
-- Auto-update `updated_at` on all tables
-
-### Audit Logging
-- Log significant changes to audit_log table
-
----
-
-## Implementation Order
-
-1. **Connect Supabase** - Link your project to Lovable
-2. **Migration 1**: Create enums and helper functions
-3. **Migration 2**: Create sites and user tables with RLS
-4. **Migration 3**: Create procedures and content tables with RLS
-5. **Migration 4**: Create progress, completions, and audit tables
-6. **Migration 5**: Create storage buckets with policies
-7. **Migration 6**: Create triggers and seed initial data
-
----
-
-## What You'll Have
-
-After setup, your Supabase project will have:
-- ✅ Complete multi-tenant database schema
-- ✅ Secure role-based access control
-- ✅ Flexible JSONB content structure for procedures
-- ✅ Audit trail for compliance
-- ✅ Storage for media and signatures
-- ✅ All RLS policies configured
-
-**Next Step**: Click the Supabase button in Lovable to connect your project, then I'll create all the migrations.
+**Viktig:** Etter at tabellene er opprettet, må autentisering implementeres i frontend for at RLS-policyene skal fungere.
 
