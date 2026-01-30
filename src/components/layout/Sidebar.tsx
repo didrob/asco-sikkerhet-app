@@ -5,7 +5,8 @@ import {
   Building2, 
   Settings, 
   FileText,
-  LayoutDashboard
+  LayoutDashboard,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsAdmin, useCanManageProcedures } from '@/hooks/useUserRoles';
@@ -56,10 +57,17 @@ export function Sidebar() {
             </p>
 
             {canManage && (
-              <NavLink to="/procedures/manage" className={navLinkClasses}>
-                <Shield className="h-4 w-4" />
-                Administrer prosedyrer
-              </NavLink>
+              <>
+                <NavLink to="/procedures/manage" className={navLinkClasses}>
+                  <Shield className="h-4 w-4" />
+                  Administrer prosedyrer
+                </NavLink>
+
+                <NavLink to="/admin/reports" className={navLinkClasses}>
+                  <BarChart3 className="h-4 w-4" />
+                  Rapporter
+                </NavLink>
+              </>
             )}
 
             {isAdmin && (
