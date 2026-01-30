@@ -201,4 +201,3 @@ Etter implementering vil dashboardet:
 - Liste prosedyrer med fremgangsstatus
 - Vise statistikk over fullførte prosedyrer
 - Ha rollebasert navigasjon (admin-lenker for admins)
-
