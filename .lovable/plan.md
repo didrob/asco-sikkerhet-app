@@ -1,227 +1,326 @@
 
 
-# Prosedyreoversikt med Statistikk og Drill-down
+# Komplett Brukeradministrasjon og Header-oppdatering
 
-## Problemanalyse
+## Oversikt
 
-Nåværende prosedyreside viser kun en enkel liste. Det mangler:
-
-| Mangler | Behov |
-|---------|-------|
-| **Antall prosedyrer** | Hvor mange prosedyrer finnes? |
-| **Publiseringsstatus** | Hvor mange er publisert vs utkast? |
-| **Fullføringsgrad** | Hvor mange brukere har fullført? |
-| **Sist oppdatert** | Hvilke prosedyrer er nylig oppdatert? |
-| **Min progresjon** | Personlig oversikt over fullførte/pågående |
+Denne planen dekker to hovedområder:
+1. **Flytte "Min profil" til header** med bruker-dropdown
+2. **Avansert brukeradministrasjon** med manuell oppretting, Excel-import og tilgangsforespørsler
 
 ---
 
-## Foreslått Løsning
+## Del A: Profil i Header med Dropdown
 
-### For vanlige brukere (`/procedures`)
-
-Legg til KPI-kort øverst som viser personlig status:
+### Nåværende struktur
 
 ```text
-PROSEDYRER
-+-----------------------------------------------------------+
-|  Mine prosedyrer  |  Fullført  |  Pågående  |  Ikke startet |
-|       8           |     5      |     2      |       1       |
-|                   |   62.5%    |            |               |
-+-----------------------------------------------------------+
+HEADER: [Logo] ... [Brukernavn] [👤-ikon] [🌙] [🚪]
 
-[Liste over prosedyrer som i dag]
+SIDEBAR: Dashboard
+         Min profil  ← Fjernes herfra
+         ...
 ```
 
-### For HMS/admin (`/procedures/manage`)
-
-Legg til en admin-oversikt med tabs og drill-down (inspirert av opplæringsoversikten):
+### Ny struktur
 
 ```text
-ADMINISTRER PROSEDYRER
-+-----------------------------------------------------------+
-| Totalt | Publisert | Utkast | Fullføringer | Pågående |
-|   12   |     8     |   4    |     156      |    23    |
-+-----------------------------------------------------------+
+HEADER: [Logo] ... [Brukernavn] [ON ▼] [🌙]
+                                  │
+                                  ▼
+                           +---------------+
+                           | 👤 Min profil |
+                           |---------------|
+                           | 🚪 Logg ut    |
+                           +---------------+
 
-[Prosedyreoversikt] [Fullføringsgrad] [Sist oppdatert]
-
-PROSEDYREOVERSIKT (klikkbar for detaljer)
-+---------------------------------------------------------------+
-| Prosedyre         | Status     | Fullført | Rate   | Oppdatert |
-|-------------------|------------|----------|--------|-----------|
-| HMS Introduksjon  | Publisert  | 45/52    | 87%    | I dag     |
-| Brannøvelse       | Publisert  | 38/52    | 73%    | 3 dager   |
-| Førstehjelpskurs  | Utkast     | —        | —      | 1 uke     |
-+---------------------------------------------------------------+
+SIDEBAR: Dashboard  ← "Min profil" fjernet
+         ...
 ```
+
+### Endringer
+
+| Fil | Endring |
+|-----|---------|
+| `AppHeader.tsx` | DropdownMenu med initialer, profil-lenke og logg ut |
+| `Sidebar.tsx` | Fjern "Min profil" lenke |
+| `MobileNav.tsx` | Fjern "Min profil" lenke |
 
 ---
 
-## Del 1: KPI-kort for vanlige brukere
+## Del B: Avansert Brukeradministrasjon
 
-Legger til statistikk-kort på `/procedures`-siden:
+### B1. Ny Database-struktur
+
+```sql
+-- Tilgangsforespørsler (når brukere ber om tilgang)
+CREATE TABLE public.access_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  full_name TEXT,
+  company TEXT,
+  request_type TEXT DEFAULT 'new_user',  -- 'new_user' | 'password_reset'
+  status TEXT DEFAULT 'pending',          -- 'pending' | 'approved' | 'rejected'
+  requested_at TIMESTAMPTZ DEFAULT now(),
+  processed_at TIMESTAMPTZ,
+  processed_by UUID,
+  notes TEXT
+);
+
+-- Brukerinvitasjoner (med midlertidig passord)
+CREATE TABLE public.user_invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  full_name TEXT,
+  temporary_password TEXT NOT NULL,
+  invited_by UUID,
+  invited_at TIMESTAMPTZ DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL,  -- Default 7 dager
+  activated_at TIMESTAMPTZ,
+  status TEXT DEFAULT 'pending',    -- 'pending' | 'activated' | 'expired'
+  site_id UUID REFERENCES sites(id)
+);
+```
+
+### B2. Edge Function for Brukeroppretting
+
+```typescript
+// supabase/functions/create-user/index.ts
+// Bruker SUPABASE_SERVICE_ROLE_KEY for å opprette auth-brukere
+// Validerer at kaller er admin via JWT
+```
+
+### B3. Ny AdminUsers-side med Tabs
 
 ```text
-+----------------+----------------+----------------+----------------+
-| Prosedyrer     | Fullført       | Pågående       | Ikke startet   |
-| tilgjengelig   |                |                |                |
-|      8         |     5 (62%)    |      2         |      1         |
-+----------------+----------------+----------------+----------------+
++-----------------------------------------------------------+
+| Brukere                                                   |
+| Administrer brukere og tilgangsforespørsler               |
++-----------------------------------------------------------+
+| [+ Opprett bruker]  [📥 Importer Excel]  [📤 Last ned mal] |
++-----------------------------------------------------------+
+
+[Alle brukere (45)] [Tilgangsforespørsler (3)] [Ventende (2)]
+
+TAB: TILGANGSFORESPØRSLER
++----------------------------------------------------------------+
+| [Alle] [Nye brukere] [Passord-reset]                           |
++----------------------------------------------------------------+
+| 🔑 Navn         | E-post           | Type       | Handlinger   |
+| ola.nordmann    | ola@firma.no     | Ny bruker  | [✓] [✗]      |
++----------------------------------------------------------------+
 ```
 
-- Bruker eksisterende `useProcedureStats` hook
-- Viser personlig progresjon (din status)
-- Fullføringsrate i prosent
+### B4. Auth-side Endringer
+
+Erstatter "Registrer"-tab med "Be om tilgang":
+
+```text
++-----------------------------------+
+| Logg inn                          |
++-----------------------------------+
+| E-post: [____________]            |
+| Passord: [____________]           |
+| [Logg inn]                        |
++-----------------------------------+
+| Har du ikke tilgang?              |
+| [Be om tilgang]  ← Ny knapp       |
++-----------------------------------+
+```
 
 ---
 
-## Del 2: Utvidet Admin-oversikt
+## Del C: E-post via Outlook (mailto)
 
-For HMS-ansvarlige legges til:
+Alle e-poster åpnes i brukerens e-postklient - ingen automatisk utsending:
 
-### KPI-kort (systemomfattende)
-- **Totalt prosedyrer** i systemet
-- **Publiserte** vs **Utkast**
-- **Totale fullføringer** (alle brukere)
-- **Gjennomsnittlig fullføringsrate**
-
-### Tabs
-1. **Prosedyrer** - Liste med handlingsknapper (eksisterende)
-2. **Fullføringsgrad** - Per prosedyre med drill-down
-3. **Sist oppdatert** - Sortert etter oppdateringsdato
-
-### Drill-down Sheet
-Ved klikk på en prosedyre vises:
-- Hvem har fullført
-- Hvem er pågående
-- Hvem har ikke startet
-- Siste aktivitet
+```typescript
+// Nye e-postmaler i email.ts:
+generateNewUserEmail(name, email, tempPassword, expiresAt, loginUrl)
+generatePasswordResetEmail(name, email, newPassword, expiresAt, loginUrl)
+generateBulkImportEmail(users[], loginUrl)
+```
 
 ---
 
-## Del 3: Nye Filer
+## Nye Filer
 
 | Fil | Beskrivelse |
 |-----|-------------|
-| `src/hooks/useProcedureOverview.ts` | Hook for admin-statistikk per prosedyre |
-| `src/components/procedure/ProcedureStatsCards.tsx` | KPI-kort for bruker |
-| `src/components/procedure/AdminProcedureStats.tsx` | KPI-kort for admin |
-| `src/components/procedure/ProcedureCompletionTable.tsx` | Tabell med fullføringsgrad |
-| `src/components/procedure/ProcedureDetailSheet.tsx` | Drill-down for en prosedyre |
+| **Database** | |
+| `supabase/migrations/xxx_access_requests.sql` | Nye tabeller med RLS |
+| **Edge Function** | |
+| `supabase/functions/create-user/index.ts` | Brukeroppretting med service role |
+| **Hooks** | |
+| `src/hooks/useAccessRequests.ts` | CRUD for tilgangsforespørsler |
+| `src/hooks/useUserInvitations.ts` | CRUD for invitasjoner |
+| **Komponenter** | |
+| `src/components/admin/CreateUserDialog.tsx` | Manuell brukeroppretting |
+| `src/components/admin/ExcelImportDialog.tsx` | Excel-import med forhåndsvisning |
+| `src/components/admin/AccessRequestsTable.tsx` | Tabell for forespørsler |
+| `src/components/admin/ApproveRequestDialog.tsx` | Godkjenningsdialog med passord |
+| `src/components/admin/InvitationsTable.tsx` | Ventende invitasjoner |
+| **Hjelpefunksjoner** | |
+| `src/lib/password-generator.ts` | Sikker passordgenerering |
+| `src/lib/excel-utils.ts` | Excel parsing og mal-generering |
 
 ### Oppdaterte Filer
 
 | Fil | Endring |
 |-----|---------|
-| `src/pages/Procedures.tsx` | Legge til KPI-kort øverst |
-| `src/pages/ManageProcedures.tsx` | Legge til admin-statistikk og tabs |
+| `AppHeader.tsx` | Dropdown med profil og logg ut |
+| `Sidebar.tsx` | Fjern "Min profil" |
+| `MobileNav.tsx` | Fjern "Min profil" |
+| `AdminUsers.tsx` | Tabs, KPI-kort, handlingsknapper |
+| `Auth.tsx` | "Be om tilgang" i stedet for registrering |
+| `email.ts` | Nye e-postmaler for brukere |
 
 ---
 
-## Del 4: Teknisk Implementering
+## Teknisk Implementering
 
-### useProcedureOverview Hook
+### Passordgenerator
 
 ```typescript
-export interface ProcedureOverviewStats {
-  procedureId: string;
-  title: string;
-  status: 'published' | 'draft' | 'archived';
-  updatedAt: string;
-  totalUsers: number;       // Brukere på siten
-  completedCount: number;   // Antall fullføringer
-  inProgressCount: number;  // Antall pågående
-  completionRate: number;   // Prosent
-}
+// src/lib/password-generator.ts
+const LOWERCASE = 'abcdefghijkmnopqrstuvwxyz';  // Uten l
+const UPPERCASE = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // Uten I, O
+const NUMBERS = '23456789';                      // Uten 0, 1
+const SPECIAL = '!@#$%&*';
 
-export function useProcedureOverview(siteId?: string) {
-  return useQuery({
-    queryKey: ['procedure-overview', siteId],
-    queryFn: async () => {
-      // Hent prosedyrer med fullførings- og progress-tall
-      // Beregn rates per prosedyre
-    }
-  });
+export function generateSecurePassword(length = 12): string {
+  // Sørger for minst én av hver type
+  // Shuffler resultatet
 }
 ```
 
-### ProcedureStatsCards (for vanlige brukere)
+### Excel-utils
 
 ```typescript
-function ProcedureStatsCards({ stats }: { stats: ProcedureStats }) {
+// src/lib/excel-utils.ts
+export function parseExcelFile(file: File): Promise<ImportUser[]>
+export function generateExcelTemplate(): Blob
+export function downloadExcelTemplate(): void
+```
+
+### CreateUserDialog
+
+```typescript
+function CreateUserDialog() {
+  // 1. Fylle inn e-post, navn
+  // 2. Velge site
+  // 3. Generere midlertidig passord
+  // 4. Sette utløpsdato (default 7 dager)
+  // 5. Klikk "Opprett og send e-post"
+  // 6. Edge function oppretter bruker
+  // 7. mailto: åpner Outlook med ferdig e-post
+}
+```
+
+### Header Dropdown
+
+```typescript
+function AppHeader() {
+  const initials = getInitials(displayName);
+  
   return (
-    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-      <StatCard title="Tilgjengelig" value={stats.total} icon={FileText} />
-      <StatCard title="Fullført" value={stats.completed} icon={CheckCircle2} />
-      <StatCard title="Pågående" value={stats.inProgress} icon={Clock} />
-      <StatCard title="Ikke startet" value={stats.notStarted} icon={AlertCircle} />
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
+          {initials}
+        </div>
+        <ChevronDown />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem asChild>
+          <Link to="/profile">Min profil</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={signOut}>
+          Logg ut
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 ```
 
 ---
 
-## Del 5: Visuell Design
-
-### Bruker-siden (`/procedures`)
+## Arbeidsflyt: Ny Bruker
 
 ```text
-+-----------------------------------------------------------+
-| Prosedyrer                                                |
-| Se og fullfør sikkerhetsprosedyrer tildelt din rolle      |
-+-----------------------------------------------------------+
-
-+----------+----------+----------+----------+
-| Tilgj.   | Fullført | Pågående | Ikke     |
-|   8      |  5 (62%) |    2     | startet 1|
-+----------+----------+----------+----------+
-
-[Prosedyrekort 1]
-[Prosedyrekort 2]
-...
+1. Admin klikker "Opprett bruker"
+2. Fyller inn e-post, navn, velger site
+3. Midlertidig passord genereres automatisk
+4. Utløpsdato settes (default 7 dager)
+5. Admin klikker "Opprett og send e-post"
+6. Edge function oppretter bruker i Supabase Auth
+7. Invitation lagres i user_invitations
+8. Outlook åpnes med ferdig utfylt e-post
+9. Admin sender e-posten manuelt
+10. Bruker mottar e-post, logger inn, bytter passord
 ```
 
-### Admin-siden (`/procedures/manage`)
+## Arbeidsflyt: Be om Tilgang
 
 ```text
-+-----------------------------------------------------------+
-| Administrer prosedyrer              [+ Ny prosedyre]      |
-| Opprett, rediger og publiser sikkerhetsprosedyrer         |
-+-----------------------------------------------------------+
+1. Ny person går til innloggingssiden
+2. Klikker "Be om tilgang"
+3. Fyller inn e-post, navn, firma
+4. Forespørsel lagres i access_requests
+5. Admin ser forespørselen i listen
+6. Admin klikker "Godkjenn"
+7. Dialog åpnes med generert passord og site-valg
+8. Admin bekrefter - bruker opprettes
+9. Outlook åpnes med velkomst-e-post
+```
 
-+----------+----------+----------+----------+----------+
-| Totalt   | Publisert| Utkast   | Fullf.   | Snittrate|
-|   12     |    8     |    4     |   156    |   78%    |
-+----------+----------+----------+----------+----------+
+## Arbeidsflyt: Excel-import
 
-[Prosedyrer] [Fullføringsgrad] [Sist oppdatert]
-
-(Tab-innhold med tabell + handlinger)
+```text
+1. Admin laster ned Excel-mal
+2. Fyller inn brukere (e-post, navn, avdeling, stilling)
+3. Laster opp filen
+4. Forhåndsvisning vises med validering
+5. Admin velger site og utløpsdato
+6. Admin bekrefter import
+7. Alle brukere opprettes sekvensielt
+8. Samlet e-post genereres med alle brukere
+9. Outlook åpnes - admin sender e-posten
 ```
 
 ---
 
-## Del 6: Implementeringsrekkefølge
+## Implementeringsrekkefølge
 
-1. **useProcedureOverview hook** - Admin-statistikk
-2. **ProcedureStatsCards** - KPI-kort for brukere
-3. **Procedures.tsx oppdatering** - Legge til kort øverst
-4. **AdminProcedureStats** - KPI-kort for admin
-5. **ProcedureCompletionTable** - Fullføringsgrad per prosedyre
-6. **ProcedureDetailSheet** - Drill-down
-7. **ManageProcedures.tsx oppdatering** - Tabs og statistikk
+1. **Header-oppdatering** - Dropdown med profil, fjern fra sidebar
+2. **Database-migrering** - access_requests og user_invitations
+3. **Edge Function** - create-user for admin-oppretting
+4. **Hjelpefunksjoner** - password-generator, excel-utils, email-maler
+5. **Hooks** - useAccessRequests, useUserInvitations
+6. **Komponenter** - CreateUserDialog, AccessRequestsTable, ExcelImportDialog
+7. **AdminUsers.tsx** - Ny tabs-struktur med alle funksjoner
+8. **Auth.tsx** - "Be om tilgang" erstatter registrering
+
+---
+
+## Sikkerhet
+
+- Edge function validerer at kaller er admin via JWT
+- Midlertidige passord hastes aldri - kun vist én gang
+- Invitasjoner utløper automatisk
+- RLS policies beskytter alle tabeller
+- Ingen automatisk e-postutsending - unngår spam-filter
 
 ---
 
 ## Resultat
 
-- **Vanlige brukere**: Ser sin egen progresjon med 4 KPI-kort
-- **HMS/admin**: Får full oversikt over alle prosedyrer med:
-  - Systemstatistikk (totalt, publisert, utkast)
-  - Fullføringsgrad per prosedyre
-  - Drill-down til hvem som har fullført
-  - Sist oppdatert-visning
-- **Konsistent design**: Samme stil som opplæringsoversikten
+- **Profil i header** med dropdown-meny og initialer
+- **Manuell brukeroppretting** med midlertidig passord
+- **Excel-import** for bulk-oppretting
+- **Tilgangsforespørsler** fra nye brukere
+- **E-post via Outlook** - ingen spam-problemer
+- **Passord-utløp** for sikkerhet
+- **Ingen selvregistrering** - kun admin kan gi tilgang
 
