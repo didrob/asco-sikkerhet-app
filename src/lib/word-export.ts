@@ -19,6 +19,7 @@ import {
 import { saveAs } from 'file-saver';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
+import { ASCO_TEAL_HEX } from './logo-base64';
 
 interface ContentBlock {
   id: string;
@@ -43,32 +44,65 @@ interface ProcedureData {
 export async function exportToWord(procedure: ProcedureData): Promise<void> {
   const children: (Paragraph | Table)[] = [];
 
-  // Header with category
+  // Header with ASCO branding
   children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: 'ASCO',
-          size: 20,
-          color: '6B7280',
+    new Table({
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: 'ASCO Prosedyrehub',
+                      size: 28,
+                      bold: true,
+                      color: 'FFFFFF',
+                    }),
+                  ],
+                }),
+              ],
+              shading: { type: ShadingType.SOLID, color: ASCO_TEAL_HEX },
+              width: { size: 70, type: WidthType.PERCENTAGE },
+              borders: {
+                top: { style: BorderStyle.NONE },
+                bottom: { style: BorderStyle.NONE },
+                left: { style: BorderStyle.NONE },
+                right: { style: BorderStyle.NONE },
+              },
+            }),
+            new TableCell({
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: procedure.category?.toUpperCase() || 'PROSEDYRE',
+                      size: 20,
+                      bold: true,
+                      color: 'FFFFFF',
+                    }),
+                  ],
+                  alignment: AlignmentType.RIGHT,
+                }),
+              ],
+              shading: { type: ShadingType.SOLID, color: ASCO_TEAL_HEX },
+              width: { size: 30, type: WidthType.PERCENTAGE },
+              borders: {
+                top: { style: BorderStyle.NONE },
+                bottom: { style: BorderStyle.NONE },
+                left: { style: BorderStyle.NONE },
+                right: { style: BorderStyle.NONE },
+              },
+            }),
+          ],
         }),
       ],
+      width: { size: 100, type: WidthType.PERCENTAGE },
     })
   );
-
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: procedure.category?.toUpperCase() || 'PROSEDYRE',
-          size: 24,
-          color: '3B82F6',
-          bold: true,
-        }),
-      ],
-      spacing: { after: 200 },
-    })
-  );
+  
+  children.push(new Paragraph({ spacing: { after: 200 } }));
 
   // Title
   children.push(
@@ -387,6 +421,17 @@ export async function exportToWord(procedure: ProcedureData): Promise<void> {
             children: [
               new Paragraph({
                 children: [
+                  new TextRun({
+                    text: 'ASCO Prosedyrehub',
+                    size: 16,
+                    color: ASCO_TEAL_HEX,
+                    bold: true,
+                  }),
+                  new TextRun({
+                    text: '    |    ',
+                    size: 16,
+                    color: '9CA3AF',
+                  }),
                   new TextRun({
                     text: format(new Date(), 'd. MMMM yyyy', { locale: nb }),
                     size: 16,
