@@ -33,10 +33,12 @@ import {
   Trash2, 
   Eye,
   Shield,
-  AlertCircle
+  AlertCircle,
+  Upload
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
+import { DocumentImportDialog } from '@/components/procedure/DocumentImportDialog';
 
 function ManageProceduresSkeleton() {
   return (
@@ -165,8 +167,8 @@ export default function ManageProcedures() {
   const { data: procedures, isLoading: proceduresLoading } = useProcedures(currentSite?.id || null);
   const { data: overview, isLoading: overviewLoading } = useProcedureOverview(currentSite?.id || null);
   const deleteProcedure = useDeleteProcedure();
-  
   const [selectedProcedure, setSelectedProcedure] = useState<ProcedureOverviewStats | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const isLoading = roleLoading || proceduresLoading;
 
@@ -213,12 +215,17 @@ export default function ManageProcedures() {
               Opprett, rediger og publiser sikkerhetsprosedyrer
             </p>
           </div>
-          <Button onClick={() => navigate('/procedures/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Ny prosedyre
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Importer
+            </Button>
+            <Button onClick={() => navigate('/procedures/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Ny prosedyre
+            </Button>
+          </div>
         </div>
-
         {/* Mobile Site Selector */}
         {sites.length > 1 && (
           <div className="lg:hidden">
@@ -313,6 +320,12 @@ export default function ManageProcedures() {
         procedure={selectedProcedure}
         siteId={currentSite?.id || null}
         onClose={() => setSelectedProcedure(null)}
+      />
+
+      {/* Document Import Dialog */}
+      <DocumentImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
       />
     </AppLayout>
   );
