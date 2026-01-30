@@ -35,6 +35,10 @@ import ManageTraining from "./pages/training/ManageTraining";
 import TrainingGroups from "./pages/training/TrainingGroups";
 import TrainingOverview from "./pages/training/TrainingOverview";
 
+// System pages
+import UserStats from "./pages/system/UserStats";
+import AIAccess from "./pages/system/AIAccess";
+
 const queryClient = new QueryClient();
 
 // Wrapper component for protected routes with SiteProvider
@@ -91,6 +95,10 @@ const App = () => (
             <Route path="/admin/reports" element={<ProtectedWithSite><AdminReports /></ProtectedWithSite>} />
             <Route path="/admin/roles" element={<ProtectedWithSite><AdminRoles /></ProtectedWithSite>} />
             <Route path="/admin/audit" element={<ProtectedWithSite><AdminAuditLog /></ProtectedWithSite>} />
+            
+            {/* System routes (admin only) */}
+            <Route path="/system/stats" element={<ProtectedWithSite><UserStats /></ProtectedWithSite>} />
+            <Route path="/system/ai" element={<ProtectedWithSite><AIAccess /></ProtectedWithSite>} />
             
             {/* Governance routes (for external_client and auditor roles) */}
             <Route path="/governance" element={<ProtectedRoute><GovernanceDashboard /></ProtectedRoute>} />

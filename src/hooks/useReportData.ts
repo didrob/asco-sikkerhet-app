@@ -7,6 +7,8 @@ export interface CompletionStats {
   totalUsers: number;
   completedCount: number;
   completionRate: number;
+  totalViews: number;
+  uniqueViewers: number;
 }
 
 export interface UserCompletion {
@@ -57,10 +59,22 @@ export function useCompletionStats(siteId: string | null) {
 
       if (compError) throw compError;
 
+      // Fetch views for these procedures
+      const { data: views, error: viewsError } = await supabase
+        .from('procedure_views')
+        .select('procedure_id, user_id')
+        .in('procedure_id', procedureIds);
+
+      if (viewsError) throw viewsError;
+
       // Calculate stats per procedure
       const stats: CompletionStats[] = procedures.map(proc => {
         const procCompletions = completions?.filter(c => c.procedure_id === proc.id) || [];
         const uniqueUsers = new Set(procCompletions.map(c => c.user_id)).size;
+        
+        const procViews = views?.filter(v => v.procedure_id === proc.id) || [];
+        const totalViews = procViews.length;
+        const uniqueViewers = new Set(procViews.map(v => v.user_id)).size;
         
         return {
           procedureId: proc.id,
@@ -68,6 +82,8 @@ export function useCompletionStats(siteId: string | null) {
           totalUsers,
           completedCount: uniqueUsers,
           completionRate: totalUsers > 0 ? Math.round((uniqueUsers / totalUsers) * 100) : 0,
+          totalViews,
+          uniqueViewers,
         };
       });
 

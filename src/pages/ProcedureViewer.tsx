@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { useStartProcedure, useAdvanceBlock, useCompleteProcedure } from '@/hook
 import { SignatureDialog } from '@/components/procedure/SignatureDialog';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useSiteContext } from '@/contexts/SiteContext';
+import { useLogProcedureView, useUpdateViewDuration } from '@/hooks/useProcedureViews';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowLeft, 
   FileText, 
@@ -65,17 +67,47 @@ export default function ProcedureViewer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentSite } = useSiteContext();
+  const { user } = useAuth();
   const { data: procedure, isLoading, error } = useProcedure(id);
   const { canExecuteProcedures, isViewer, isLoading: roleLoading } = useRoleAccess(currentSite?.id);
   
   const startProcedure = useStartProcedure();
   const advanceBlock = useAdvanceBlock();
   const completeProcedure = useCompleteProcedure();
+  const logView = useLogProcedureView();
+  const updateDuration = useUpdateViewDuration();
   
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [checkpointConfirmed, setCheckpointConfirmed] = useState(false);
   const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
   const [quizError, setQuizError] = useState(false);
+  
+  // View tracking
+  const viewIdRef = useRef<string | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
+  
+  useEffect(() => {
+    if (procedure?.id && user?.id && !viewIdRef.current) {
+      // Log the view
+      logView.mutate(procedure.id, {
+        onSuccess: (data) => {
+          viewIdRef.current = data?.id || null;
+          startTimeRef.current = Date.now();
+        },
+      });
+    }
+    
+    // Update duration on unmount
+    return () => {
+      if (viewIdRef.current) {
+        const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
+        updateDuration.mutate({ 
+          viewId: viewIdRef.current, 
+          durationSeconds 
+        });
+      }
+    };
+  }, [procedure?.id, user?.id]);
 
   if (isLoading) {
     return (
