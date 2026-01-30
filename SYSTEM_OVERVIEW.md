@@ -84,7 +84,7 @@
 
 ### 2. Prosedyremodul
 
-**Filer**: `src/pages/Procedures*.tsx`, `src/hooks/useProcedure*.ts`
+**Filer**: `src/pages/Procedures.tsx`, `src/pages/ProcedureViewer.tsx`, `src/pages/ProcedureEditor.tsx`, `src/pages/ManageProcedures.tsx`, `src/hooks/useProcedure*.ts`
 
 **Funksjoner**:
 - ✏️ **CRUD-operasjoner** - Opprett, les, oppdater og slett prosedyrer
@@ -110,7 +110,7 @@
 
 ### 3. Opplæringsmodul
 
-**Filer**: `src/pages/Training*.tsx`, `src/hooks/useTraining*.ts`
+**Filer**: `src/pages/training/Training.tsx`, `src/pages/training/ManageTraining.tsx`, `src/pages/training/TrainingGroups.tsx`, `src/pages/training/TrainingOverview.tsx`, `src/hooks/useTraining*.ts`
 
 **Funksjoner**:
 - 📚 **Kurshåndtering** - Opprett og administrer opplæringskurs
@@ -136,7 +136,7 @@
 
 ### 4. Sertifikater og Verifisering
 
-**Filer**: `src/pages/Certificates*.tsx`, `src/pages/CertificateVerification.tsx`
+**Filer**: `src/pages/Certificates.tsx`, `src/pages/CertificateViewer.tsx`, `src/pages/VerifyCertificate.tsx`
 
 **Funksjoner**:
 - 🎓 **Sertifikatgenerering** - Automatisk generering ved fullføring
@@ -192,7 +192,7 @@
 
 ### 7. Revisjon og Compliance
 
-**Filer**: `src/pages/Governance*.tsx`, `src/pages/admin/AuditLog.tsx`
+**Filer**: `src/pages/governance/GovernanceDashboard.tsx`, `src/pages/governance/AuditDeepDive.tsx`, `src/pages/governance/GovernanceCertificates.tsx`, `src/pages/admin/AdminAuditLog.tsx`
 
 **Funksjoner**:
 - 📋 **Revisjonslogg** - Omfattende logg av alle handlinger
@@ -213,7 +213,7 @@
 | Rute | Komponent | Beskrivelse |
 |------|-----------|-------------|
 | `/auth` | `Auth.tsx` | Innlogging og registrering |
-| `/verify/:id` | `CertificateVerification.tsx` | Verifiser sertifikat (offentlig) |
+| `/verify/:id` | `VerifyCertificate.tsx` | Verifiser sertifikat (offentlig) |
 
 ### Beskyttede Ruter
 
@@ -227,17 +227,17 @@
 | Rute | Komponent | Tilgang |
 |------|-----------|---------|
 | `/procedures` | `Procedures.tsx` | Alle |
-| `/procedures/new` | `NewProcedure.tsx` | Supervisor+ |
-| `/procedures/manage` | `ProcedureManagement.tsx` | Supervisor+ |
-| `/procedures/:id` | `ProcedureView.tsx` | Alle |
-| `/procedures/:id/edit` | `ProcedureEdit.tsx` | Supervisor+ |
+| `/procedures/new` | `ProcedureEditor.tsx` | Supervisor+ |
+| `/procedures/manage` | `ManageProcedures.tsx` | Supervisor+ |
+| `/procedures/:id` | `ProcedureViewer.tsx` | Alle |
+| `/procedures/:id/edit` | `ProcedureEditor.tsx` | Supervisor+ |
 
 #### Opplæring
 | Rute | Komponent | Tilgang |
 |------|-----------|---------|
 | `/training` | `Training.tsx` | Alle |
 | `/training/history` | `TrainingHistory.tsx` | Alle |
-| `/training/manage` | `TrainingManagement.tsx` | Supervisor+ |
+| `/training/manage` | `ManageTraining.tsx` | Supervisor+ |
 | `/training/groups` | `TrainingGroups.tsx` | Supervisor+ |
 | `/training/overview` | `TrainingOverview.tsx` | Supervisor+ |
 
@@ -245,29 +245,29 @@
 | Rute | Komponent | Tilgang |
 |------|-----------|---------|
 | `/certificates` | `Certificates.tsx` | Alle |
-| `/certificates/:id` | `CertificateDetail.tsx` | Alle |
+| `/certificates/:id` | `CertificateViewer.tsx` | Alle |
 
 #### Admin
 | Rute | Komponent | Tilgang |
 |------|-----------|---------|
-| `/admin/sites` | `Sites.tsx` | Admin |
-| `/admin/users` | `Users.tsx` | Admin |
-| `/admin/roles` | `Roles.tsx` | Admin |
-| `/admin/settings` | `Settings.tsx` | Admin |
-| `/admin/reports` | `Reports.tsx` | Admin |
-| `/admin/audit` | `AuditLog.tsx` | Admin |
+| `/admin/sites` | `AdminSites.tsx` | Admin |
+| `/admin/users` | `AdminUsers.tsx` | Admin |
+| `/admin/roles` | `AdminRoles.tsx` | Admin |
+| `/admin/settings` | `AdminSettings.tsx` | Admin |
+| `/admin/reports` | `AdminReports.tsx` | Admin |
+| `/admin/audit` | `AdminAuditLog.tsx` | Admin |
 
 #### System
 | Rute | Komponent | Tilgang |
 |------|-----------|---------|
 | `/system/stats` | `UserStats.tsx` | Admin |
-| `/system/ai` | `AIAccessManagement.tsx` | Admin |
+| `/system/ai` | `AIAccess.tsx` | Admin |
 
 #### Governance
 | Rute | Komponent | Tilgang |
 |------|-----------|---------|
-| `/governance` | `Governance.tsx` | Governance-roller |
-| `/governance/audit` | `GovernanceAudit.tsx` | Governance-roller |
+| `/governance` | `GovernanceDashboard.tsx` | Governance-roller |
+| `/governance/audit` | `AuditDeepDive.tsx` | Governance-roller |
 | `/governance/certificates` | `GovernanceCertificates.tsx` | Governance-roller |
 
 ---
