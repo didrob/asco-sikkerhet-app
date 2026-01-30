@@ -1,140 +1,156 @@
 
 
-# Implementering Del 5 - Governance-struktur for Roller
+# Implementering Del 6 - RBAC UI, Media-opplasting og Varsler
 
 ## Oversikt
-Oppretter en dedikert governance-struktur under admin-seksjonen hvor administrator har full kontroll over roller. Dette separerer brukeradministrasjon fra rolle/tilgangsstyring.
+Denne fasen fokuserer på tre hovedområder:
+1. Forbedret rollebasert tilgangskontroll i brukergrensesnittet
+2. Bildeopplasting direkte i prosedyre-editoren
+3. E-postvarsler for prosedyre-frister via Edge Function
 
 ---
 
-## Arkitektur
+## Del 1: Forbedret RBAC Hook
 
-```text
-Admin-seksjon (kun for admin)
-├── Governance (ny seksjon)
-│   ├── Roller (/admin/roles) - Administrer roller og tilganger
-│   └── (Fremtidig: Audit Log, Policies, etc.)
-├── Sites (/admin/sites)
-├── Brukere (/admin/users) - Kun bruker- og site-tildeling
-└── Innstillinger (/admin/settings)
+### Ny Hook: `src/hooks/useRoleAccess.ts`
+
+En samlet hook som forenkler tilgangssjekker i hele applikasjonen:
+
+| Tilgang | admin | supervisor | operator | viewer |
+|---------|-------|------------|----------|--------|
+| Se prosedyrer | Ja | Ja | Ja | Ja |
+| Starte/fullføre prosedyrer | Ja | Ja | Ja | Nei |
+| Administrere prosedyrer | Ja | Ja (egen site) | Nei | Nei |
+| Se rapporter | Ja | Ja (egen site) | Nei | Nei |
+| Administrere brukere | Ja | Nei | Nei | Nei |
+| Administrere sites | Ja | Nei | Nei | Nei |
+| Innstillinger | Ja | Nei | Nei | Nei |
+| Roller (Governance) | Ja | Nei | Nei | Nei |
+
+### Hook API
+
+```typescript
+interface RoleAccess {
+  isLoading: boolean;
+  isAdmin: boolean;
+  isSupervisor: boolean;
+  isOperator: boolean;
+  isViewer: boolean;
+  canExecuteProcedures: boolean;  // admin, supervisor, operator
+  canManageProcedures: boolean;   // admin, supervisor
+  canViewReports: boolean;        // admin, supervisor
+  canManageUsers: boolean;        // admin
+  canManageSites: boolean;        // admin
+  canAccessSettings: boolean;     // admin
+  canManageRoles: boolean;        // admin
+}
 ```
 
 ---
 
-## Del 1: Ny Side - AdminRoles.tsx
+## Del 2: Viewer-begrensninger i ProcedureViewer
 
-Dedikert side for rolleadministrasjon med følgende funksjoner:
+### Endringer
+
+Brukere med `viewer`-rolle skal:
+- Kunne se prosedyre-innhold i lesemodus
+- Ikke kunne klikke "Start prosedyre"
+- Se en informasjonsmelding om at de kun har lesetilgang
+
+### UI-endringer
+
+```text
+ProcedureViewer
+├── [Eksisterende innhold]
+├── Action buttons
+│   ├── Hvis canExecuteProcedures: Vis "Start prosedyre"
+│   └── Hvis viewer: Vis "Du har kun lesetilgang"
+```
+
+---
+
+## Del 3: Media-opplasting i ProcedureEditor
+
+### Funksjonalitet
 
 | Funksjon | Beskrivelse |
 |----------|-------------|
-| Oversikt | Vis alle roller gruppert per site |
-| Tildel rolle | Modal for å gi bruker en rolle på en site |
-| Fjern rolle | Fjern eksisterende rolle |
-| Rollebeskrivelser | Informasjon om hva hver rolle kan gjøre |
-| Audit-info | Hvem tildelte rollen og når |
+| Opplasting | Drag-and-drop eller filvelger |
+| Bucket | `procedure-media` (allerede opprettet) |
+| Filtyper | Bilder (jpg, png, gif, webp) |
+| Maks størrelse | 5MB |
 
-### UI-struktur
+### Endringer i Image-blokk Editor
 
-```text
-AdminRoles
-├── Header med tittel og info
-├── Faner per site (eller velger)
-├── Rolle-matrise
-│   ├── Rad per bruker
-│   └── Kolonne per rolle (admin, supervisor, operator, viewer)
-├── Tildel rolle-dialog
-│   ├── Velg bruker
-│   ├── Velg site
-│   └── Velg rolle
-└── Rolleoversikt-panel
-    └── Beskrivelse av hver rolle og dens tilganger
-```
+Erstatte URL-input med:
+1. Opplastingsknapp/drag-area
+2. Forhåndsvisning av opplastet bilde
+3. Alternativ tekst-input
 
----
-
-## Del 2: Oppdater AdminUsers.tsx
-
-Forenkle brukeradministrasjonen til kun å håndtere:
-- Brukerinformasjon
-- Site-tildelinger (ikke roller)
-- Lenke til Roller-siden for rolleadministrasjon
-
-Fjern:
-- Rolle-tildeling UI
-- Rolle-visning (erstatt med lenke/badge)
-
----
-
-## Del 3: Ny Hook - useAdminRoles.ts
-
-Dedikert hook for roller med utvidet funksjonalitet:
+### Hjelpefunksjon
 
 ```typescript
-interface RoleWithDetails {
-  id: string;
-  user_id: string;
-  site_id: string;
-  role: AppRole;
-  created_at: string;
-  user: {
-    full_name: string;
-    job_title: string;
-  };
-  site: {
-    name: string;
-    location: string;
-  };
+async function uploadProcedureMedia(
+  file: File, 
+  procedureId: string
+): Promise<string> {
+  const fileName = `${procedureId}/${Date.now()}-${file.name}`;
+  const { error } = await supabase.storage
+    .from('procedure-media')
+    .upload(fileName, file);
+  
+  if (error) throw error;
+  
+  const { data } = supabase.storage
+    .from('procedure-media')
+    .getPublicUrl(fileName);
+  
+  return data.publicUrl;
 }
-
-// Hooks:
-- useAllRoles() - Hent alle roller med bruker/site-detaljer
-- useRolesBySite(siteId) - Roller filtrert per site
-- useAssignRole() - Tildel rolle (eksisterende)
-- useRemoveRole() - Fjern rolle (eksisterende)
-- useBulkAssignRoles() - Tildel flere roller samtidig
 ```
 
 ---
 
-## Del 4: Navigasjons-oppdatering
+## Del 4: E-postvarsler via Edge Function
 
-### Sidebar og MobileNav
+### Ny Edge Function: `supabase/functions/send-reminder/index.ts`
 
-```text
-Administrasjon
-├── Administrer prosedyrer (supervisor+)
-├── Rapporter (supervisor+)
-├── Governance (kun admin)
-│   └── Roller
-├── Sites (admin)
-├── Brukere (admin)
-└── Innstillinger (admin)
-```
+Sender daglige påminnelser til brukere med ufullførte prosedyrer som nærmer seg frist.
 
-Alternativt kan "Governance" være en egen seksjon:
+### Trigger-metoder
+
+1. **Manuelt kall** fra admin-panel
+2. **Cron-jobb** (fremtidig - krever ekstern scheduler)
+
+### Logikk
 
 ```text
-Governance (kun admin)
-├── Roller
-
-Administrasjon
-├── Sites
-├── Brukere
-└── Innstillinger
+1. Hent prosedyrer med due_date innen 7 dager
+2. For hver prosedyre:
+   a. Finn brukere som ikke har fullført
+   b. Grupper prosedyrer per bruker
+3. Send e-post til hver bruker med liste over prosedyrer
 ```
 
----
+### E-postmal
 
-## Del 5: Rollebeskrivelser
+```text
+Hei [Navn],
 
-Informasjonspanel som viser hva hver rolle kan gjøre:
+Du har prosedyrer som snart utløper:
 
-| Rolle | Beskrivelse | Tilganger |
-|-------|-------------|-----------|
-| **Admin** | Global administrator | Full tilgang til alt i systemet |
-| **Supervisor** | Site-leder | Administrere prosedyrer, se rapporter for sin site |
-| **Operator** | Standard bruker | Utføre og fullføre prosedyrer |
-| **Viewer** | Leser | Kun lesbar tilgang til prosedyrer |
+• HMS Introduksjon - Frist: 15. februar 2026
+• Brannøvelse - Frist: 20. februar 2026
+
+Logg inn for å fullføre: [LENKE]
+
+Med vennlig hilsen,
+Prosedyrehub
+```
+
+### Forutsetninger
+
+For å sende e-post trengs `RESEND_API_KEY` secret i Supabase.
 
 ---
 
@@ -142,137 +158,122 @@ Informasjonspanel som viser hva hver rolle kan gjøre:
 
 | Fil | Handling | Beskrivelse |
 |-----|----------|-------------|
-| `src/pages/admin/AdminRoles.tsx` | Ny | Rolleadministrasjon-side |
-| `src/hooks/useAdminRoles.ts` | Ny | Hook for rolle-operasjoner |
-| `src/pages/admin/AdminUsers.tsx` | Oppdater | Forenkle - fjern rolle-UI |
-| `src/components/layout/Sidebar.tsx` | Oppdater | Legg til Roller-lenke |
-| `src/components/layout/MobileNav.tsx` | Oppdater | Legg til Roller-lenke |
-| `src/App.tsx` | Oppdater | Ny rute /admin/roles |
+| `src/hooks/useRoleAccess.ts` | Ny | Samlet RBAC-hook |
+| `src/pages/ProcedureViewer.tsx` | Oppdater | Viewer-begrensninger |
+| `src/pages/ProcedureEditor.tsx` | Oppdater | Bildeopplasting |
+| `src/lib/storage.ts` | Ny | Hjelpefunksjoner for storage |
+| `supabase/functions/send-reminder/index.ts` | Ny | E-postvarsling |
 
 ---
 
 ## Tekniske Detaljer
 
-### AdminRoles Komponent
+### useRoleAccess Hook
 
 ```typescript
-// Rolle-matrise visning
-interface RoleMatrixProps {
-  siteId: string;
-  users: UserWithDetails[];
-  roles: RoleWithDetails[];
-}
+export function useRoleAccess(siteId?: string | null): RoleAccess {
+  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
+  const { data: canManage, isLoading: manageLoading } = useCanManageProcedures(siteId);
+  const { data: userRoles, isLoading: rolesLoading } = useUserRoles();
 
-function RoleMatrix({ siteId, users, roles }: RoleMatrixProps) {
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Bruker</TableHead>
-          <TableHead>Admin</TableHead>
-          <TableHead>Supervisor</TableHead>
-          <TableHead>Operator</TableHead>
-          <TableHead>Viewer</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {users.map(user => (
-          <TableRow key={user.id}>
-            <TableCell>{user.profile?.full_name}</TableCell>
-            {['admin', 'supervisor', 'operator', 'viewer'].map(role => (
-              <TableCell key={role}>
-                <Checkbox 
-                  checked={hasRole(user.id, siteId, role)} 
-                  onCheckedChange={(checked) => toggleRole(user.id, siteId, role, checked)}
-                />
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+  const hasRoleForSite = (role: AppRole) => {
+    if (!siteId || !userRoles) return false;
+    return userRoles.some(r => r.site_id === siteId && r.role === role);
+  };
+
+  const isSupervisor = !!canManage && !isAdmin;
+  const isOperator = hasRoleForSite('operator');
+  const isViewer = hasRoleForSite('viewer') && !isOperator && !isSupervisor && !isAdmin;
+
+  return {
+    isLoading: adminLoading || manageLoading || rolesLoading,
+    isAdmin: !!isAdmin,
+    isSupervisor,
+    isOperator,
+    isViewer,
+    canExecuteProcedures: !!isAdmin || !!canManage || isOperator,
+    canManageProcedures: !!isAdmin || !!canManage,
+    canViewReports: !!isAdmin || !!canManage,
+    canManageUsers: !!isAdmin,
+    canManageSites: !!isAdmin,
+    canAccessSettings: !!isAdmin,
+    canManageRoles: !!isAdmin,
+  };
 }
 ```
 
-### useAdminRoles Hook
+### ProcedureViewer med Viewer-sjekk
 
 ```typescript
-export function useAllRoles() {
-  return useQuery({
-    queryKey: ['all_roles'],
-    queryFn: async () => {
-      const { data: roles, error } = await supabase
-        .from('user_roles')
-        .select(`
-          *,
-          profiles!user_roles_user_id_fkey (
-            full_name,
-            job_title
-          ),
-          sites!user_roles_site_id_fkey (
-            name,
-            location
-          )
-        `)
-        .order('created_at', { ascending: false });
+const { canExecuteProcedures, isViewer } = useRoleAccess(currentSite?.id);
 
-      if (error) throw error;
-      return roles;
-    },
-  });
+// I action buttons-seksjonen:
+{!hasStarted && contentBlocks.length > 0 && (
+  canExecuteProcedures ? (
+    <Button onClick={handleStart}>
+      <Play className="mr-2 h-5 w-5" />
+      Start prosedyre
+    </Button>
+  ) : (
+    <div className="flex items-center gap-2 text-muted-foreground">
+      <Eye className="h-5 w-5" />
+      Du har kun lesetilgang til denne prosedyren
+    </div>
+  )
+)}
+```
+
+### Edge Function Struktur
+
+```typescript
+// supabase/functions/send-reminder/index.ts
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-export function useRolesBySite(siteId: string) {
-  return useQuery({
-    queryKey: ['roles_by_site', siteId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select(`
-          *,
-          profiles!user_roles_user_id_fkey (
-            full_name,
-            job_title
-          )
-        `)
-        .eq('site_id', siteId);
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!siteId,
-  });
-}
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  )
+
+  // 1. Hent prosedyrer med frist innen 7 dager
+  // 2. Finn brukere som ikke har fullført
+  // 3. Send e-post via Resend
+
+  return new Response(
+    JSON.stringify({ success: true, sent: emailCount }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+})
 ```
 
 ---
 
 ## Implementeringsrekkefølge
 
-1. **useAdminRoles hook** - Data-grunnlag for rolleadministrasjon
-2. **AdminRoles side** - Ny side med rolle-matrise
-3. **Oppdater AdminUsers** - Forenkle bruker-siden
-4. **Navigasjons-oppdatering** - Legg til Roller i meny
-5. **Registrer rute** - Legg til /admin/roles i App.tsx
-
----
-
-## Sikkerhet
-
-Alle roller ligger i `user_roles`-tabellen med RLS-policies:
-- Kun admin kan se, opprette og slette roller
-- Server-side validering via `is_admin()` funksjonen
-- Ingen rolle-data lagres på klient-siden
+1. **useRoleAccess hook** - Samlet tilgangs-API
+2. **ProcedureViewer oppdatering** - Viewer-begrensninger
+3. **Storage hjelpefunksjoner** - For bildeopplasting
+4. **ProcedureEditor oppdatering** - Bildeopplasting UI
+5. **Edge Function** - E-postvarsling
 
 ---
 
 ## Resultat Etter Implementering
 
-- Dedikert Governance-seksjon for rolleadministrasjon
-- Admin har full oversikt over alle roller per site
-- Enkel rolle-matrise for rask tildeling
-- Brukeradministrasjon fokuserer kun på site-tildelinger
-- Tydelig separasjon mellom bruker- og rolleadministrasjon
-- Informasjonspanel som forklarer rollene
+- Viewers kan kun lese prosedyrer, ikke starte dem
+- Enkel tilgangssjekk med `useRoleAccess` hook
+- Bilder kan lastes opp direkte i prosedyre-editoren
+- Forhåndsvisning av opplastede bilder
+- E-postvarsler for prosedyrer som nærmer seg frist
+- Admin kan trigge påminnelser manuelt
 
