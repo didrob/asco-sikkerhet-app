@@ -8,7 +8,8 @@ import {
   Settings, 
   FileText,
   LayoutDashboard,
-  BarChart3
+  BarChart3,
+  Crown
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -120,6 +121,20 @@ export function MobileNav() {
                   </NavLink>
                 </>
               )}
+            </div>
+          )}
+
+          {/* Governance section - Admin only */}
+          {isAdmin && (
+            <div className="mt-6 space-y-1">
+              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Governance
+              </p>
+              
+              <NavLink to="/admin/roles" className={navLinkClasses}>
+                <Crown className="h-4 w-4" />
+                Roller
+              </NavLink>
             </div>
           )}
 
