@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
+import { ASCO_TEAL, drawAscoLogoInPdf } from './logo-base64';
 
 interface ContentBlock {
   id: string;
@@ -63,18 +64,33 @@ export async function exportToPDF(procedure: ProcedureData): Promise<void> {
     return lines.length * lineHeight;
   };
 
-  // Header
-  doc.setFillColor(59, 130, 246); // Blue header
+  // Header with ASCO Teal
+  doc.setFillColor(ASCO_TEAL.r, ASCO_TEAL.g, ASCO_TEAL.b);
   doc.rect(0, 0, pageWidth, 35, 'F');
   
+  // Draw ASCO logo (teal circle on white background area)
+  doc.setFillColor(255, 255, 255);
+  doc.circle(margin + 8, 17.5, 8, 'F');
+  
+  // Draw smaller teal circle inside for the logo effect
+  doc.setFillColor(ASCO_TEAL.r, ASCO_TEAL.g, ASCO_TEAL.b);
+  doc.circle(margin + 8, 17.5, 5, 'F');
+  
   doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ASCO', margin + 22, 15);
+  
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('ASCO', margin, 12);
+  doc.text('Prosedyrehub', margin + 22, 22);
   
-  doc.setFontSize(16);
+  // Category on the right
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text(procedure.category?.toUpperCase() || 'PROSEDYRE', margin, 25);
+  const categoryText = procedure.category?.toUpperCase() || 'PROSEDYRE';
+  const categoryWidth = doc.getTextWidth(categoryText);
+  doc.text(categoryText, pageWidth - margin - categoryWidth, 20);
   
   yPos = 45;
 
@@ -289,6 +305,11 @@ export async function exportToPDF(procedure: ProcedureData): Promise<void> {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(150, 150, 150);
+    doc.text(
+      'ASCO Prosedyrehub',
+      margin,
+      pageHeight - 10
+    );
     doc.text(
       `Side ${i} av ${totalPages}`,
       pageWidth / 2,
