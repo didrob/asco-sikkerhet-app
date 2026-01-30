@@ -19,6 +19,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminRoles from "./pages/admin/AdminRoles";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/admin/settings" element={<ProtectedWithSite><AdminSettings /></ProtectedWithSite>} />
             <Route path="/admin/reports" element={<ProtectedWithSite><AdminReports /></ProtectedWithSite>} />
             <Route path="/admin/roles" element={<ProtectedWithSite><AdminRoles /></ProtectedWithSite>} />
+            <Route path="/admin/audit" element={<ProtectedWithSite><AdminAuditLog /></ProtectedWithSite>} />
             
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />

@@ -135,6 +135,11 @@ export function MobileNav() {
                 <Crown className="h-4 w-4" />
                 Roller
               </NavLink>
+
+              <NavLink to="/admin/audit" className={navLinkClasses}>
+                <FileText className="h-4 w-4" />
+                Aktivitetslogg
+              </NavLink>
             </div>
           )}
 
