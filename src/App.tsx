@@ -34,6 +34,7 @@ import TrainingHistory from "./pages/training/TrainingHistory";
 import ManageTraining from "./pages/training/ManageTraining";
 import TrainingGroups from "./pages/training/TrainingGroups";
 import TrainingOverview from "./pages/training/TrainingOverview";
+import CoursePlayer from "./pages/training/CoursePlayer";
 
 // System pages
 import UserStats from "./pages/system/UserStats";
@@ -83,6 +84,7 @@ const App = () => (
             <Route path="/training/manage" element={<ProtectedWithSite><ManageTraining /></ProtectedWithSite>} />
             <Route path="/training/groups" element={<ProtectedWithSite><TrainingGroups /></ProtectedWithSite>} />
             <Route path="/training/overview" element={<ProtectedWithSite><TrainingOverview /></ProtectedWithSite>} />
+            <Route path="/training/:courseId/play" element={<ProtectedWithSite><CoursePlayer /></ProtectedWithSite>} />
             
             {/* Certificate routes (legacy - keeping for now) */}
             <Route path="/certificates" element={<ProtectedWithSite><Certificates /></ProtectedWithSite>} />
