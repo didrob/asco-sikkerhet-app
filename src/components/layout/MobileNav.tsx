@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { useIsAdmin, useCanManageProcedures } from '@/hooks/useUserRoles';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { ThemeLogo } from '@/components/ThemeLogo';
+import { NavSection } from './NavSection';
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -67,123 +68,120 @@ export function MobileNav() {
         </SheetHeader>
         
         <nav className="flex flex-col gap-2 p-4">
+          {/* Dashboard og Profil - alltid synlig */}
           <div className="space-y-1">
-            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Navigasjon
-            </p>
-            
             <NavLink to="/" className={navLinkClasses} end>
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
             </NavLink>
 
-            <NavLink to="/procedures" className={navLinkClasses}>
-              <FileText className="h-4 w-4" />
-              Prosedyrer
-            </NavLink>
-          </div>
-
-          {/* Training section */}
-          <div className="mt-4 space-y-1">
-            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Opplæring
-            </p>
-            
-            <NavLink to="/training" className={navLinkClasses}>
-              <BookOpen className="h-4 w-4" />
-              Aktive kurs
-            </NavLink>
-
-            <NavLink to="/training/history" className={navLinkClasses}>
-              <History className="h-4 w-4" />
-              Min opplæringshistorikk
-            </NavLink>
-          </div>
-
-          {/* User section */}
-          <div className="mt-4 space-y-1">
             <NavLink to="/profile" className={navLinkClasses}>
               <User className="h-4 w-4" />
               Min profil
             </NavLink>
           </div>
 
-          {/* Administrasjon section */}
-          {canManage && (
-            <div className="mt-6 space-y-1">
-              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Administrasjon
-              </p>
-
-              <NavLink to="/procedures/manage" className={navLinkClasses}>
-                <Shield className="h-4 w-4" />
-                Prosedyrer
+          {/* PROSEDYRER */}
+          <div className="mt-4">
+            <NavSection title="Prosedyrer" icon={FileText}>
+              <NavLink to="/procedures" className={navLinkClasses}>
+                <FileText className="h-4 w-4" />
+                Bla i prosedyrer
               </NavLink>
+              {canManage && (
+                <NavLink to="/procedures/manage" className={navLinkClasses}>
+                  <Shield className="h-4 w-4" />
+                  Administrer prosedyrer
+                </NavLink>
+              )}
+            </NavSection>
+          </div>
 
-              <NavLink to="/training/manage" className={navLinkClasses}>
+          {/* KURS */}
+          <div className="mt-2">
+            <NavSection title="Kurs" icon={BookOpen}>
+              <NavLink to="/training" className={navLinkClasses}>
                 <BookOpen className="h-4 w-4" />
-                Kurs
+                Mine kurs
               </NavLink>
 
-              <NavLink to="/training/groups" className={navLinkClasses}>
-                <Users className="h-4 w-4" />
-                Grupper
+              <NavLink to="/training/history" className={navLinkClasses}>
+                <History className="h-4 w-4" />
+                Min kurshistorikk
               </NavLink>
 
-              <NavLink to="/training/overview" className={navLinkClasses}>
-                <BarChart3 className="h-4 w-4" />
-                Opplæringsoversikt
-              </NavLink>
+              {canManage && (
+                <>
+                  <NavLink to="/training/manage" className={navLinkClasses}>
+                    <Settings className="h-4 w-4" />
+                    Administrer kurs
+                  </NavLink>
 
-              <NavLink to="/admin/reports" className={navLinkClasses}>
-                <BarChart3 className="h-4 w-4" />
-                Rapporter
-              </NavLink>
+                  <NavLink to="/training/groups" className={navLinkClasses}>
+                    <Users className="h-4 w-4" />
+                    Grupper
+                  </NavLink>
+
+                  <NavLink to="/training/overview" className={navLinkClasses}>
+                    <BarChart3 className="h-4 w-4" />
+                    Opplæringsoversikt
+                  </NavLink>
+                </>
+              )}
+            </NavSection>
+          </div>
+
+          {/* RAPPORTER - kun HMS/admin */}
+          {canManage && (
+            <div className="mt-2">
+              <NavSection title="Rapporter" icon={BarChart3}>
+                <NavLink to="/admin/reports" className={navLinkClasses}>
+                  <BarChart3 className="h-4 w-4" />
+                  Rapporter
+                </NavLink>
+              </NavSection>
             </div>
           )}
 
-          {/* System section - Admin only */}
+          {/* SYSTEM - kun global admin */}
           {isAdmin && (
-            <div className="mt-6 space-y-1">
-              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <Cog className="mr-1 inline h-3 w-3" />
-                System
-              </p>
-              
-              <NavLink to="/admin/users" className={navLinkClasses}>
-                <User className="h-4 w-4" />
-                Brukere
-              </NavLink>
+            <div className="mt-2">
+              <NavSection title="System" icon={Cog}>
+                <NavLink to="/admin/users" className={navLinkClasses}>
+                  <User className="h-4 w-4" />
+                  Brukere
+                </NavLink>
 
-              <NavLink to="/admin/sites" className={navLinkClasses}>
-                <Building2 className="h-4 w-4" />
-                Lokasjoner
-              </NavLink>
+                <NavLink to="/admin/sites" className={navLinkClasses}>
+                  <Building2 className="h-4 w-4" />
+                  Lokasjoner
+                </NavLink>
 
-              <NavLink to="/admin/roles" className={navLinkClasses}>
-                <Crown className="h-4 w-4" />
-                Roller
-              </NavLink>
+                <NavLink to="/admin/roles" className={navLinkClasses}>
+                  <Crown className="h-4 w-4" />
+                  Roller
+                </NavLink>
 
-              <NavLink to="/admin/audit" className={navLinkClasses}>
-                <FileText className="h-4 w-4" />
-                Endringslogg
-              </NavLink>
+                <NavLink to="/admin/audit" className={navLinkClasses}>
+                  <FileText className="h-4 w-4" />
+                  Endringslogg
+                </NavLink>
 
-              <NavLink to="/system/stats" className={navLinkClasses}>
-                <Activity className="h-4 w-4" />
-                Brukerstatistikk
-              </NavLink>
+                <NavLink to="/system/stats" className={navLinkClasses}>
+                  <Activity className="h-4 w-4" />
+                  Brukerstatistikk
+                </NavLink>
 
-              <NavLink to="/system/ai" className={navLinkClasses}>
-                <Bot className="h-4 w-4" />
-                AI-tilgang
-              </NavLink>
+                <NavLink to="/system/ai" className={navLinkClasses}>
+                  <Bot className="h-4 w-4" />
+                  AI-tilgang
+                </NavLink>
 
-              <NavLink to="/admin/settings" className={navLinkClasses}>
-                <Settings className="h-4 w-4" />
-                Innstillinger
-              </NavLink>
+                <NavLink to="/admin/settings" className={navLinkClasses}>
+                  <Settings className="h-4 w-4" />
+                  Innstillinger
+                </NavLink>
+              </NavSection>
             </div>
           )}
 
