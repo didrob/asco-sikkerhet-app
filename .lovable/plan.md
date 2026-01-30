@@ -1,230 +1,415 @@
 
 
-# Forbedret Dashboard-layout og Diagrammer
+# Forbedret Opplæringsoversikt med Drill-down og Purring
 
-## Oversikt
+## Problemanalyse
 
-Basert på referansebildet skal vi redesigne dashboard-layouten til å være mer profesjonell med:
+Nåværende oversikt gir god statistikk på høyt nivå, men mangler:
 
-1. **Kombinert velkomstheader med periode-velger** - Inspirert av referansen
-2. **Horisontale KPI-kort** i én rad med trend-indikatorer
-3. **AreaChart** for tidslinjevisning (fylte områder som i referansen)
-4. **PieChart** for statusfordeling
-5. **BarChart** for kategorifordeling
+| Mangler | Problem |
+|---------|---------|
+| **Kurs-spesifikk visning** | Kan ikke se detaljer for hvert enkelt kurs |
+| **Purring-funksjon** | Ingen mulighet til å sende påminnelse til forsinket |
+| **Utsendelsesstatistikk** | Vet ikke hvor mange som har mottatt invitasjon |
+| **Trend-data** | Ingen sammenligning med forrige uke/måned |
+| **Handlingsknapper** | Må navigere bort for å gjøre noe |
+| **Detaljert brukervisning** | Kan ikke klikke for å se én brukers status |
 
 ---
 
-## Del 1: Ny Dashboard-header
-
-Erstatter den nåværende `WelcomeCard` med en kompakt header som inkluderer periode-velger:
+## Ny Struktur
 
 ```text
-+--------------------------------------------------------------+
-| Velkommen tilbake, [Fornavn]!              Siste 7 dager  ▼  |
-| [Site] - Her er en oversikt over din aktivitet  📅 24-30 jan |
-+--------------------------------------------------------------+
+OPPLÆRINGSOVERSIKT
++-----------------------------------------------------------+
+| Header: "Opplæringsoversikt" | Periode: [7 dager ▼] | Lokasjon: [Alle ▼] |
++-----------------------------------------------------------+
+
+KPI-KORT (med trend)
++----------+----------+----------+----------+----------+----------+
+| Kurs     | Sendt ut | Fullført | Påbegynt | Forfalt  | Purring  |
+| aktive   | til      |          |          |          | sendt    |
+|   8      |   156    |   89     |   34     |   12     |   5      |
+| ↗ +2     | ↗ +23    | ↗ +15    | — 0      | ↓ -3     | ↗ +5     |
++----------+----------+----------+----------+----------+----------+
+
+TABS
++-----------------------------------------------------------+
+| [Kursoversikt] | [Forfalte] | [Pågående] | [Compliance]    |
++-----------------------------------------------------------+
 ```
 
 ---
 
-## Del 2: KPI-kort med trendindikator
+## Del 1: Kursoversikt-fane (Ny)
 
-Redesign av statistikk-kortene med:
-- **Større tall** med fargekodet verdi
-- **Trend-piler** (↗ +15% vs forrige periode)
-- **Kompakt layout** - 5 kort i én rad
+En tabell med alle kurs og deres status:
 
 ```text
-+----------+----------+----------+----------+----------+
-| Totalt   | Fullført | Påbegynt | Visninger| Gj.snitt |
-| antall   |          |          |          | lesetid  |
-|   16     |    9     |    4     |   156    |   4m 32s |
-| ↗ +167%  | ↗ +80%   | — 0%     | ↗ +45%   | ↗ +22%   |
-+----------+----------+----------+----------+----------+
+KURSOVERSIKT
++---------------------------------------------------------------+
+| Kurs            | Sendt | Fullført | Pågående | Forfalt | ... |
+|-----------------|-------|----------|----------|---------|-----|
+| HMS Grunnkurs   | 45    | 38 (84%) | 4        | 3       | [→] |
+| Førstehjelp     | 32    | 12 (38%) | 8        | 12 ⚠️   | [→] |
+| Kranfører       | 24    | 22 (92%) | 2        | 0       | [→] |
++---------------------------------------------------------------+
+              Klikk for å se detaljer per kurs
+```
+
+### Drill-down til kurs-detaljer
+
+Ved klikk på et kurs åpnes en Dialog/Sheet med:
+
+```text
++---------------------------------------------------------------+
+| HMS Grunnkurs                                     [X]         |
+|---------------------------------------------------------------|
+| Sendt: 45 | Fullført: 38 (84%) | Pågående: 4 | Forfalt: 3     |
+|---------------------------------------------------------------|
+| FULLFØRT (38)                                                 |
+| ✓ Ola Nordmann    | 95% | 28. jan 2026                        |
+| ✓ Kari Hansen     | 88% | 27. jan 2026                        |
+| ...                                                           |
+|---------------------------------------------------------------|
+| FORFALT (3)                                   [Send purring]  |
+| ⚠ Per Olsen       | 5 dager over | □                         |
+| ⚠ Anne Berg       | 3 dager over | □                         |
+|                                    [Send til valgte]          |
++---------------------------------------------------------------+
 ```
 
 ---
 
-## Del 3: Aktivitet over tid - AreaChart
+## Del 2: Forfalte-fane (Forbedret)
 
-Bytte fra LineChart til AreaChart med gradient-fyll (som i referansen):
+Eksisterende forfalt-liste, men med handlingsknapper:
 
 ```text
-+--------------------------------------------------------------+
-| Aktivitet over tid                                           |
-| Visninger og fullføringer per dag                            |
-|                                                              |
-|     [AreaChart med gradient-fyll]                            |
-|     ⬤ Nåværende periode    ○ Forrige periode                 |
-+--------------------------------------------------------------+
+FORFALTE TILDELINGER
++---------------------------------------------------------------+
+| [ ] | Bruker       | Kurs           | Dager over | Handling   |
+|-----|--------------|----------------|------------|------------|
+| [✓] | Per Olsen    | HMS Grunnkurs  | 5 dager    | [Purring]  |
+| [✓] | Anne Berg    | HMS Grunnkurs  | 3 dager    | [Purring]  |
+| [ ] | Ole Hansen   | Førstehjelp    | 12 dager   | [Purring]  |
++---------------------------------------------------------------+
+| [Send purring til 2 valgte]                                   |
++---------------------------------------------------------------+
+```
+
+### Purring-dialog
+
+```text
++-----------------------------------------------+
+| Send påminnelse                               |
+|-----------------------------------------------|
+| Mottakere: 2 brukere                          |
+|                                               |
+| [ ] Per Olsen - per@example.com               |
+| [ ] Anne Berg - anne@example.com              |
+|                                               |
+| Kurs: HMS Grunnkurs                           |
+| Forfalt: 3-5 dager                            |
+|                                               |
+| Meldingsmal:                                  |
+| [Påminnelse: Du har forfalt opplæring...]     |
+|                                               |
+| [Avbryt]              [Åpne e-postklient]     |
++-----------------------------------------------+
 ```
 
 ---
 
-## Del 4: To-kolonne layout med PieChart og BarChart
+## Del 3: Pågående-fane (Ny)
+
+Viser brukere som har startet men ikke fullført:
 
 ```text
-+---------------------------+---------------------------+
-| Status-fordeling          | Aktivitet per type        |
-| Fordeling av prosedyrer   | Fordeling per kategori    |
-|                           |                           |
-|     [PieChart]            |     [BarChart]            |
-|   ⬤ Fullført 56%          |   Prosedyrer |████| 65    |
-|   ⬤ Påbegynt 24%          |   Kurs       |██████| 89  |
-|   ⬤ Ikke startet 20%      |   Visninger  |████| 156   |
-+---------------------------+---------------------------+
+PÅGÅENDE OPPLÆRING
++---------------------------------------------------------------+
+| Bruker          | Kurs           | Startet    | Frist         |
+|-----------------|----------------|------------|---------------|
+| Lisa Andersen   | HMS Grunnkurs  | 3 dager    | 4 dager igjen |
+| Tom Eriksen     | Førstehjelp    | 1 dag      | 7 dager igjen |
++---------------------------------------------------------------+
 ```
 
 ---
 
-## Del 5: Fil-endringer
+## Del 4: Database-endringer
+
+Legger til sporing av purringer:
+
+```sql
+-- Ny tabell for å loggføre sendte påminnelser
+CREATE TABLE training_reminders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  assignment_id UUID REFERENCES training_assignments(id) ON DELETE CASCADE NOT NULL,
+  sent_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  sent_by UUID REFERENCES auth.users(id),
+  reminder_type TEXT DEFAULT 'overdue'  -- 'overdue', 'upcoming', 'manual'
+);
+
+-- Indeks
+CREATE INDEX idx_training_reminders_assignment ON training_reminders(assignment_id);
+CREATE INDEX idx_training_reminders_sent_at ON training_reminders(sent_at);
+
+-- RLS
+ALTER TABLE training_reminders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Managers can manage reminders"
+ON training_reminders FOR ALL TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM training_assignments a
+    JOIN training_courses c ON c.id = a.course_id
+    WHERE a.id = training_reminders.assignment_id
+    AND can_manage_procedures(auth.uid(), c.site_id)
+  )
+);
+```
+
+---
+
+## Del 5: Nye og Oppdaterte Filer
+
+### Nye Filer
+
+| Fil | Beskrivelse |
+|-----|-------------|
+| `supabase/migrations/xxx_training_reminders.sql` | Reminder-tabell |
+| `src/hooks/useTrainingReminders.ts` | CRUD for påminnelser |
+| `src/components/training/CourseDetailSheet.tsx` | Drill-down for kurs |
+| `src/components/training/ReminderDialog.tsx` | Dialog for å sende purring |
+| `src/components/training/OverdueTable.tsx` | Tabell med handlinger |
 
 ### Oppdaterte Filer
 
 | Fil | Endring |
 |-----|---------|
-| `src/pages/Index.tsx` | Ny layout med periode-velger og kompakt header |
-| `src/components/dashboard/WelcomeCard.tsx` | Redesign til kompakt header med periode |
-| `src/components/dashboard/UserStats.tsx` | Trenddata og forbedrede kort |
-| `src/components/dashboard/AdminDashboardCards.tsx` | Samme stil |
-| `src/components/dashboard/SupervisorDashboardCards.tsx` | Samme stil |
-| `src/pages/system/UserStats.tsx` | AreaChart, PieChart, forbedret layout |
-
-### Nye Komponenter
-
-| Fil | Beskrivelse |
-|-----|-------------|
-| `src/components/dashboard/DashboardHeader.tsx` | Kombinert header med periode-velger |
-| `src/components/dashboard/StatCardWithTrend.tsx` | KPI-kort med trend-indikator |
-| `src/components/dashboard/ActivityChart.tsx` | AreaChart med gradient |
-| `src/components/dashboard/StatusPieChart.tsx` | PieChart for statusfordeling |
+| `src/pages/training/TrainingOverview.tsx` | Ny tabs-struktur, KPI med trend |
+| `src/hooks/useTrainingOverview.ts` | Legge til kurs-statistikk og utsendelsesdata |
+| `src/lib/email.ts` | Ny `generateReminderEmail()` funksjon |
 
 ---
 
-## Del 6: Tekniske Detaljer
+## Del 6: Nye Hooks
 
-### AreaChart med Gradient
+### useTrainingReminders
 
 ```typescript
-import { AreaChart, Area, defs, linearGradient } from 'recharts';
+// Hent påminnelser for et kurs
+export function useCourseReminders(courseId: string) {
+  return useQuery({...});
+}
 
-<AreaChart data={data}>
-  <defs>
-    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-    </linearGradient>
-  </defs>
-  <Area 
-    type="monotone" 
-    dataKey="views" 
-    stroke="hsl(var(--primary))" 
-    fill="url(#colorViews)" 
-  />
-</AreaChart>
+// Send påminnelse
+export function useSendReminder() {
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async ({ assignmentIds }: { assignmentIds: string[] }) => {
+      // 1. Logg påminnelse i database
+      await supabase.from('training_reminders').insert(
+        assignmentIds.map(id => ({
+          assignment_id: id,
+          sent_by: user!.id,
+          reminder_type: 'overdue',
+        }))
+      );
+      
+      // 2. Returnér data for å åpne e-postklient
+      return { assignmentIds };
+    },
+  });
+}
 ```
 
-### PieChart for Status
+### useCourseStats (ny)
 
 ```typescript
-import { PieChart, Pie, Cell } from 'recharts';
+export interface CourseStats {
+  courseId: string;
+  courseTitle: string;
+  totalSent: number;      // Antall tildelinger
+  completed: number;      // Fullført
+  inProgress: number;     // Påbegynt men ikke fullført
+  overdue: number;        // Forfalt
+  notStarted: number;     // Ikke startet
+  remindersSent: number;  // Antall purringer
+  completionRate: number;
+}
 
-const COLORS = ['hsl(142, 76%, 36%)', 'hsl(217, 91%, 60%)', 'hsl(215, 16%, 47%)'];
-
-<PieChart>
-  <Pie
-    data={statusData}
-    innerRadius={60}
-    outerRadius={80}
-    dataKey="value"
-    label
-  >
-    {statusData.map((_, index) => (
-      <Cell key={index} fill={COLORS[index % COLORS.length]} />
-    ))}
-  </Pie>
-</PieChart>
-```
-
-### StatCard med Trend
-
-```typescript
-interface StatCardWithTrendProps {
-  title: string;
-  value: number | string;
-  icon: LucideIcon;
-  trend?: number; // +15 = opp 15%, -10 = ned 10%
-  trendLabel?: string;
-  valueColor?: string;
+export function useCourseStats(siteId?: string) {
+  return useQuery({...});
 }
 ```
 
 ---
 
-## Del 7: Visuell Sammenligning
+## Del 7: UI-komponenter
 
-### Før (nåværende)
+### TrainingOverview med Tabs
 
-```text
-+-------------------------------+
-| God morgen, [Navn]!           |
-| Velkommen til [Site]          |
-| [Lang beskrivelse...]         |
-+-------------------------------+
-
-+-------+-------+-------+-------+
-| Total | Fullf | Påbeg | Ikke  |
-|  12   |   8   |   2   |   2   |
-+-------+-------+-------+-------+
-
-[Prosedyreliste nedenfor]
+```typescript
+<Tabs defaultValue="courses">
+  <TabsList>
+    <TabsTrigger value="courses">Kursoversikt</TabsTrigger>
+    <TabsTrigger value="overdue">
+      Forfalte 
+      {overdueCount > 0 && <Badge variant="destructive">{overdueCount}</Badge>}
+    </TabsTrigger>
+    <TabsTrigger value="inprogress">Pågående</TabsTrigger>
+    <TabsTrigger value="compliance">Compliance</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="courses">
+    <CourseStatsTable onSelectCourse={setSelectedCourse} />
+  </TabsContent>
+  
+  <TabsContent value="overdue">
+    <OverdueTable 
+      assignments={overdueAssignments} 
+      onSendReminder={handleSendReminder}
+    />
+  </TabsContent>
+  
+  {/* ... */}
+</Tabs>
 ```
 
-### Etter (ny design)
+### CourseDetailSheet
 
-```text
-+---------------------------------------------------+-------+
-| Velkommen tilbake, [Fornavn]!      [7 dager ▼] 📅 |       |
-| [Site] - Her er en oversikt       24-30 jan 2026  |       |
-+---------------------------------------------------+-------+
-
-+---------+---------+---------+---------+---------+
-| Total   | Fullført| Påbegynt| Visning.| Lesetid |
-|   16    |    9    |    4    |   156   |  4m 32s |
-| ↗+167%  | ↗+80%   | — 0%    | ↗+45%   | ↗+22%   |
-+---------+---------+---------+---------+---------+
-
-+---------------------------------------------------+
-| Aktivitet over tid                                |
-| [AreaChart med gradient - nåværende vs forrige]   |
-+---------------------------------------------------+
-
-+------------------------+------------------------+
-| Status-fordeling       | Aktivitet per type     |
-| [Donut PieChart]       | [Horisontalt BarChart] |
-+------------------------+------------------------+
+```typescript
+<Sheet open={!!selectedCourse} onOpenChange={() => setSelectedCourse(null)}>
+  <SheetContent className="w-[600px]">
+    <SheetHeader>
+      <SheetTitle>{selectedCourse?.title}</SheetTitle>
+    </SheetHeader>
+    
+    {/* KPI for dette kurset */}
+    <div className="grid grid-cols-4 gap-2">
+      <StatCard title="Sendt" value={stats.totalSent} />
+      <StatCard title="Fullført" value={stats.completed} color="green" />
+      <StatCard title="Pågående" value={stats.inProgress} color="blue" />
+      <StatCard title="Forfalt" value={stats.overdue} color="red" />
+    </div>
+    
+    {/* Accordion med brukerlister */}
+    <Accordion>
+      <AccordionItem value="completed">
+        <AccordionTrigger>Fullført ({stats.completed})</AccordionTrigger>
+        <AccordionContent>
+          {/* Liste over fullførte brukere */}
+        </AccordionContent>
+      </AccordionItem>
+      
+      <AccordionItem value="overdue">
+        <AccordionTrigger>
+          Forfalt ({stats.overdue})
+          <Button size="sm">Send purring</Button>
+        </AccordionTrigger>
+        <AccordionContent>
+          {/* Liste med checkbox + purring-knapp */}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  </SheetContent>
+</Sheet>
 ```
 
 ---
 
-## Del 8: Implementeringsrekkefølge
+## Del 8: E-post for Purring
 
-1. **StatCardWithTrend** - Ny komponent for KPI-kort med trend
-2. **DashboardHeader** - Kompakt header med periode-velger
-3. **ActivityChart** - AreaChart med gradient
-4. **StatusPieChart** - Donut chart for statusfordeling
-5. **Oppdater Index.tsx** - Ny layout med alle komponenter
-6. **Oppdater UserStats.tsx** (dashboard) - Bruk nye komponenter
-7. **Oppdater system/UserStats.tsx** - Samme stil for admin-dashboard
+Utvider `src/lib/email.ts`:
+
+```typescript
+export function generateReminderEmail(
+  courseTitle: string,
+  daysOverdue: number,
+  dueDate: Date,
+  baseUrl?: string
+): { subject: string; body: string } {
+  const subject = `Påminnelse: Forfalt opplæring - ${courseTitle}`;
+  
+  let body = `Hei,\n\n`;
+  body += `Dette er en påminnelse om at opplæringen "${courseTitle}" hadde frist `;
+  body += `${dueDate.toLocaleDateString('nb-NO')} (${daysOverdue} dager siden).\n\n`;
+  body += `Vennligst fullfør opplæringen så snart som mulig.\n\n`;
+  body += `Logg inn her: ${baseUrl || window.location.origin}/training\n\n`;
+  body += `Med vennlig hilsen,\nHMS-avdelingen`;
+  
+  return { subject, body };
+}
+```
+
+---
+
+## Del 9: Visuell Sammenligning
+
+### Før (nåværende)
+
+```text
++----------+----------+----------+----------+
+| Tildelt  | Rate     | Bestått  | Forfalt  |
+|   156    |   57%    |   89     |   12     |
++----------+----------+----------+----------+
+
+[Lokasjonssammenligning]
+
++------------------+------------------+
+| Forfalt frist    | Manglende opp.   |
+| - Per (5 dager)  | - Ole (HMS-kurs) |
+| - Anne (3 dager) | - Liv (Første.)  |
+| (ingen handling) | (ingen handling) |
++------------------+------------------+
+```
+
+### Etter (ny)
+
+```text
++--------+--------+--------+--------+--------+--------+
+| Kurs   | Sendt  | Fullf. | Pågå.  | Forfalt| Purring|
+|  8     |  156   |   89   |   34   |   12   |   5    |
+| ↗ +2   | ↗ +23  | ↗ +15  |  — 0   |  ↓ -3  | ↗ +5   |
++--------+--------+--------+--------+--------+--------+
+
+[Kursoversikt] [Forfalte (12)] [Pågående] [Compliance]
+
+KURSOVERSIKT (klikkbar)
++--------------------------------------------------------+
+| Kurs           | Sendt | Fullført | Forfalt | Handling |
+| HMS Grunnkurs  |  45   |  38 (84%)|    3    |  [→]     |
+| Førstehjelp ⚠️  |  32   |  12 (38%)|   12    |  [→]     |
++--------------------------------------------------------+
+              Klikk for å drille ned + sende purring
+```
+
+---
+
+## Del 10: Implementeringsrekkefølge
+
+1. **Database-migrering** - training_reminders tabell
+2. **useCourseStats hook** - Statistikk per kurs
+3. **useTrainingReminders hook** - CRUD for påminnelser
+4. **OverdueTable komponent** - Tabell med handlingsknapper
+5. **CourseDetailSheet** - Drill-down for hvert kurs
+6. **ReminderDialog** - Dialog for å sende purring
+7. **TrainingOverview refaktorering** - Tabs-struktur
+8. **E-post templates** - Purring-maler
+9. **KPI-kort med trend** - Sammenligning med forrige periode
 
 ---
 
 ## Resultat
 
-- **Profesjonell utseende** som matcher referansebildet
-- **Trend-indikatorer** viser endring over tid
-- **AreaChart** med gradient-fyll for tidslinjer
-- **PieChart** for statusfordeling
-- **Kompakt header** med integrert periode-velger
-- **Konsistent stil** på tvers av alle dashboards
+- **Kursoversikt** med drill-down til hvert kurs
+- **Purring-funksjon** for å sende påminnelse til forfalte
+- **Utsendelsesstatistikk** - Se hvor mange som har fått invitasjon
+- **Trend-indikatorer** på alle KPI-er
+- **Handlingsknapper** direkte fra oversikten
+- **Loggføring** av alle sendte påminnelser
+- **Tabs-navigasjon** for bedre oversikt
 
