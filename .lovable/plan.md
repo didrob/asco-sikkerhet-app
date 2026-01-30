@@ -1,90 +1,65 @@
 
 
-# White-labeling: Fjerne Lovable-branding og Oppdatere Favicon
+# Generere AI-bilde for Innloggingsside
 
-## Oversikt
+## Bildetema
 
-Erstatter alle Lovable-referanser med ASCO-branding, inkludert:
-1. Favicon i browser-fane
-2. Open Graph og Twitter meta-bilder
-3. Twitter-konto referanse
+Basert på appens formål (ASCO Prosedyrehub - digital sikkerhetsoperasjoner), vil jeg generere et profesjonelt bilde som kombinerer:
 
----
+- **Industriell sikkerhet** - HMS, verneutstyr, prosedyrer
+- **Digital teknologi** - moderne, profesjonelt utseende
+- **Samarbeid** - team som jobber sammen med dokumenter/prosedyrer
 
-## Endringer
-
-### 1. Favicon
-
-**Handling**: Kopiere brukerens opplastede ASCO-ikon til `public/`
-
-```bash
-# Kopiere liten logo til public mappe
-lov-copy user-uploads://image-11.png public/favicon.png
-```
-
-**Oppdatere index.html**:
-
-```html
-<!-- FØR -->
-<!-- (ingen eksplisitt favicon-link, bruker default favicon.ico) -->
-
-<!-- ETTER -->
-<link rel="icon" href="/favicon.png" type="image/png">
-```
-
----
-
-### 2. Open Graph Bilder
-
-**Handling**: Kopiere større logo til public for OG-bilder
-
-```bash
-lov-copy user-uploads://image-12.png public/og-image.png
-```
-
-**Oppdatere index.html**:
-
-```html
-<!-- FØR -->
-<meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-<meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-<meta name="twitter:site" content="@Lovable" />
-
-<!-- ETTER -->
-<meta property="og:image" content="/og-image.png" />
-<meta name="twitter:image" content="/og-image.png" />
-<meta name="twitter:site" content="@ASCO" />
-```
-
----
-
-### 3. Slette gammel favicon
-
-**Handling**: Fjerne den gamle Lovable `favicon.ico`:
+## Prompt for bildegenerering
 
 ```
-public/favicon.ico  → SLETT
+Professional corporate photography of a modern industrial control room, 
+engineers in safety vests reviewing digital procedures on tablet devices, 
+clean and bright environment, blue and teal color scheme matching ASCO brand, 
+safety equipment visible in background, high-tech monitoring screens, 
+professional corporate atmosphere, soft natural lighting, 
+high quality 4K realistic photography
 ```
 
----
+## Implementering
 
-## Fil-endringer
+### 1. Generere bilde
+Bruke Nano banana (google/gemini-2.5-flash-image) via Lovable AI Gateway
+
+### 2. Lagre bilde
+Lagre som `public/auth-background.jpg`
+
+### 3. Oppdatere Auth.tsx
+Endre layouten til split-screen design:
+
+```
++---------------------------+---------------------------+
+|                           |                           |
+|     [AI-generert bilde]   |      ASCO Prosedyrehub    |
+|                           |      ────────────────     |
+|     Industriell sikkerhet |                           |
+|     Digital prosedyrer    |      E-post: [________]   |
+|     Profesjonelt team     |      Passord: [________]  |
+|                           |                           |
+|                           |      [Logg inn]           |
+|                           |                           |
+|                           |      Har du ikke tilgang? |
+|                           |      [Be om tilgang]      |
+|                           |                           |
++---------------------------+---------------------------+
+```
+
+### 4. Fil-endringer
 
 | Fil | Endring |
 |-----|---------|
-| `public/favicon.png` | NY - ASCO-ikon for browser-fane |
-| `public/og-image.png` | NY - ASCO-logo for deling på sosiale medier |
-| `public/favicon.ico` | SLETT - Gammel Lovable favicon |
-| `index.html` | Oppdater favicon-link, OG-bilder og Twitter-konto |
-
----
+| `public/auth-background.jpg` | NY - AI-generert bilde |
+| `src/pages/Auth.tsx` | Oppdatert layout med bildepanel |
 
 ## Resultat
 
-Etter implementering:
-
-- **Browser-fane**: Viser ASCO-ikonet (turkis sirkel med A)
-- **Deling på sosiale medier**: Viser ASCO-logo i stedet for Lovable
-- **Twitter**: Refererer til @ASCO i stedet for @Lovable
-- **Ingen Lovable-referanser** synlig for sluttbrukere
+- Profesjonell innloggingsside med relevant bilde
+- Split-screen design som matcher enterprise-apper
+- Bilde som kommuniserer appens formål (sikkerhet, prosedyrer, industri)
+- Responsivt design (bilde skjules på mobil)
 
