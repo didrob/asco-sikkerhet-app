@@ -1,5 +1,6 @@
 import { LogOut, ChevronDown, User } from 'lucide-react';
 import { ThemeLogo } from '@/components/ThemeLogo';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -69,8 +70,8 @@ export function AppHeader() {
           </div>
         )}
 
-        {/* User Info and Logout */}
-        <div className="flex items-center gap-3">
+        {/* User Info and Actions */}
+        <div className="flex items-center gap-2">
           <div className="hidden text-right sm:block">
             <p className="text-sm font-medium text-foreground">{displayName}</p>
             <p className="text-xs text-muted-foreground">Logget inn</p>
@@ -78,6 +79,7 @@ export function AppHeader() {
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
             <User className="h-4 w-4 text-muted-foreground" />
           </div>
+          <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={signOut} title="Logg ut">
             <LogOut className="h-4 w-4" />
           </Button>
