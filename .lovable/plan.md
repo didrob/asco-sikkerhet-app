@@ -1,326 +1,351 @@
 
 
-# Komplett Brukeradministrasjon og Header-oppdatering
+# Refaktorering av Prosedyremodul med Metadata, Eksport og Vedlegg
 
-## Oversikt
+## Problemanalyse
 
-Denne planen dekker to hovedområder:
-1. **Flytte "Min profil" til header** med bruker-dropdown
-2. **Avansert brukeradministrasjon** med manuell oppretting, Excel-import og tilgangsforespørsler
+Nåværende prosedyreeditor blander sammen prosedyreinnhold og opplæringsinnhold. Ifølge memory-notatet skal prosedyrer være **referansedokumenter** som krever "lest og forstått"-signatur, mens **opplæringsmoduler** skal tilby aktiv læring med quiz og praktiske oppgaver.
 
----
+### Hva som må endres
 
-## Del A: Profil i Header med Dropdown
-
-### Nåværende struktur
-
-```text
-HEADER: [Logo] ... [Brukernavn] [👤-ikon] [🌙] [🚪]
-
-SIDEBAR: Dashboard
-         Min profil  ← Fjernes herfra
-         ...
-```
-
-### Ny struktur
-
-```text
-HEADER: [Logo] ... [Brukernavn] [ON ▼] [🌙]
-                                  │
-                                  ▼
-                           +---------------+
-                           | 👤 Min profil |
-                           |---------------|
-                           | 🚪 Logg ut    |
-                           +---------------+
-
-SIDEBAR: Dashboard  ← "Min profil" fjernet
-         ...
-```
-
-### Endringer
-
-| Fil | Endring |
-|-----|---------|
-| `AppHeader.tsx` | DropdownMenu med initialer, profil-lenke og logg ut |
-| `Sidebar.tsx` | Fjern "Min profil" lenke |
-| `MobileNav.tsx` | Fjern "Min profil" lenke |
+| Problem | Løsning |
+|---------|---------|
+| Quiz/checkpoint ligger i prosedyrer | Flytte til kurseditor, beholde kun tekst/bilde/video i prosedyrer |
+| Mangler metadata | Legge til kategori, versjon, godkjent av, revisjonshistorikk |
+| Ingen eksport | PDF og Word-eksport med profesjonell formatering |
+| Ingen vedlegg | Støtte for å laste opp og koble filer til prosedyrer |
+| Ingen samarbeid | Kommentarer, endringsforslag, versjonshistorikk (Google Docs-inspirert) |
 
 ---
 
-## Del B: Avansert Brukeradministrasjon
+## Del 1: Rydde opp i Prosedyreeditor
 
-### B1. Ny Database-struktur
+### Fjerne interaktive blokktyper fra prosedyrer
+
+**Før** (ProcedureEditor.tsx linje 42-48):
+```
+BLOCK_TYPES = [
+  { type: 'text', label: 'Tekst' },
+  { type: 'checkpoint', label: 'Bekreftelse' },   ← FJERNES
+  { type: 'quiz', label: 'Quiz' },                ← FJERNES
+  { type: 'image', label: 'Bilde' },
+  { type: 'video', label: 'Video' },
+]
+```
+
+**Etter**:
+```
+BLOCK_TYPES = [
+  { type: 'text', label: 'Tekst' },
+  { type: 'heading', label: 'Overskrift' },       ← NY
+  { type: 'image', label: 'Bilde' },
+  { type: 'video', label: 'Video' },
+  { type: 'warning', label: 'Advarsel/viktig' },  ← NY
+  { type: 'list', label: 'Punktliste' },          ← NY
+]
+```
+
+Prosedyrer blir rene referansedokumenter - quiz og checkpoint flyttes til kurseditor.
+
+---
+
+## Del 2: Utvidet Metadata
+
+### Nye felt i prosedyrer-tabellen
+
+| Felt | Type | Beskrivelse |
+|------|------|-------------|
+| `category` | TEXT | Kategori (f.eks. "HMS", "Brann", "Drift") |
+| `version` | TEXT | Versjonsnummer (f.eks. "1.0", "2.1") |
+| `approved_by` | UUID | Hvem som godkjente prosedyren |
+| `approved_at` | TIMESTAMPTZ | Når den ble godkjent |
+| `review_date` | DATE | Dato for neste revisjon |
+| `document_number` | TEXT | Internt dokumentnummer |
+| `tags` | TEXT[] | Søkbare tagger |
+| `author_id` | UUID | Forfatter (kan være annen enn created_by) |
+
+### UI i Prosedyreeditor
+
+```text
+GRUNNLEGGENDE INFORMASJON
++-----------------------------------------------------------+
+| Tittel *            [HMS Introduksjon_____________]       |
+| Beskrivelse         [Kort beskrivelse___________]         |
++-----------------------------------------------------------+
+
+METADATA
++-----------------------------------------------------------+
+| Kategori       [HMS ▼]           Versjon    [1.0]         |
+| Dok.nummer     [HMS-001]         Revisjonsdato [📅]       |
+| Godkjent av    [Velg bruker ▼]   Tagger     [+Legg til]   |
++-----------------------------------------------------------+
+
+INNHOLD
+[Tekst] [Overskrift] [Bilde] [Video] [Advarsel] [Liste]
+...
+```
+
+---
+
+## Del 3: Vedlegg
+
+### Ny database-tabell
 
 ```sql
--- Tilgangsforespørsler (når brukere ber om tilgang)
-CREATE TABLE public.access_requests (
+CREATE TABLE public.procedure_attachments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL,
-  full_name TEXT,
-  company TEXT,
-  request_type TEXT DEFAULT 'new_user',  -- 'new_user' | 'password_reset'
-  status TEXT DEFAULT 'pending',          -- 'pending' | 'approved' | 'rejected'
-  requested_at TIMESTAMPTZ DEFAULT now(),
-  processed_at TIMESTAMPTZ,
-  processed_by UUID,
-  notes TEXT
-);
-
--- Brukerinvitasjoner (med midlertidig passord)
-CREATE TABLE public.user_invitations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL UNIQUE,
-  full_name TEXT,
-  temporary_password TEXT NOT NULL,
-  invited_by UUID,
-  invited_at TIMESTAMPTZ DEFAULT now(),
-  expires_at TIMESTAMPTZ NOT NULL,  -- Default 7 dager
-  activated_at TIMESTAMPTZ,
-  status TEXT DEFAULT 'pending',    -- 'pending' | 'activated' | 'expired'
-  site_id UUID REFERENCES sites(id)
+  procedure_id UUID REFERENCES procedures(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_path TEXT NOT NULL,           -- Storage path
+  file_size INTEGER,
+  file_type TEXT,                    -- MIME type
+  description TEXT,
+  uploaded_by UUID,
+  uploaded_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
-### B2. Edge Function for Brukeroppretting
+### UI: Vedlegg-seksjon i editor
 
-```typescript
-// supabase/functions/create-user/index.ts
-// Bruker SUPABASE_SERVICE_ROLE_KEY for å opprette auth-brukere
-// Validerer at kaller er admin via JWT
+```text
+VEDLEGG
++-----------------------------------------------------------+
+| [📎 Last opp vedlegg]  [📂 Koble fra eksisterende]        |
++-----------------------------------------------------------+
+| 📄 Brannøvelse-skjema.pdf     (245 KB)    [👁] [🗑]       |
+| 📄 HMS-sjekkliste.xlsx        (128 KB)    [👁] [🗑]       |
+| 📄 Instruksjonsvideo.mp4      (15 MB)     [👁] [🗑]       |
++-----------------------------------------------------------+
 ```
 
-### B3. Ny AdminUsers-side med Tabs
+### Tillatte filtyper
+- PDF, Word, Excel, PowerPoint
+- Bilder (jpg, png, gif)
+- Video (mp4, webm)
+- Maks 50MB per fil
+
+---
+
+## Del 4: PDF/Word Eksport
+
+### Eksport-knapper i editor og viewer
+
+```text
+[Forhåndsvis] [Lagre] [⬇️ Eksporter ▼]
+                            └─ PDF
+                            └─ Word (.docx)
+```
+
+### Profesjonell PDF-layout
+
+```text
++-------------------------------------------------------+
+|  ASCO                                         [LOGO]  |
+|                                                       |
+|  HMS-PROSEDYRE                                        |
+|  ═══════════════════════════════════════════════      |
+|                                                       |
+|  HMS Introduksjon                                     |
+|  Versjon 1.0 | Dok.nr: HMS-001                       |
+|                                                       |
+|  Godkjent av: Ola Nordmann                           |
+|  Godkjent dato: 28. januar 2026                      |
+|  Neste revisjon: 28. januar 2027                     |
+|                                                       |
+|  ─────────────────────────────────────────────────   |
+|                                                       |
+|  INNHOLD                                              |
+|                                                       |
+|  1. Formål                                           |
+|  2. Ansvar                                           |
+|  3. Fremgangsmåte                                    |
+|  ...                                                  |
+|                                                       |
+|  [Bilder integrert i dokumentet]                     |
+|                                                       |
+|  VEDLEGG                                             |
+|  - Brannøvelse-skjema.pdf                           |
+|  - HMS-sjekkliste.xlsx                              |
+|                                                       |
+|  ─────────────────────────────────────────────────   |
+|  Side 1 av 3                                          |
++-------------------------------------------------------+
+```
+
+### Teknisk implementering
+
+Bruker biblioteker som:
+- **jsPDF** + **html2canvas** for PDF
+- **docx** (npm) for Word-generering
+
+Eksport skjer client-side - ingen server nødvendig.
+
+---
+
+## Del 5: Samarbeid (Google Docs-inspirert)
+
+### Fase 1: Kommentarer og endringsforslag
+
+```sql
+CREATE TABLE public.procedure_comments (
+  id UUID PRIMARY KEY,
+  procedure_id UUID REFERENCES procedures(id),
+  user_id UUID,
+  content TEXT NOT NULL,
+  block_id TEXT,                    -- Hvilken blokk kommentaren gjelder
+  parent_id UUID,                   -- For svar på kommentarer
+  status TEXT DEFAULT 'open',       -- 'open', 'resolved'
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE public.procedure_revisions (
+  id UUID PRIMARY KEY,
+  procedure_id UUID REFERENCES procedures(id),
+  version TEXT NOT NULL,
+  content_snapshot JSONB,           -- Hele prosedyren som snapshot
+  changed_by UUID,
+  change_summary TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### UI: Kommentar-panel
 
 ```text
 +-----------------------------------------------------------+
-| Brukere                                                   |
-| Administrer brukere og tilgangsforespørsler               |
-+-----------------------------------------------------------+
-| [+ Opprett bruker]  [📥 Importer Excel]  [📤 Last ned mal] |
+| [Redigering]  [Kommentarer (3)]  [Historikk]              |
 +-----------------------------------------------------------+
 
-[Alle brukere (45)] [Tilgangsforespørsler (3)] [Ventende (2)]
-
-TAB: TILGANGSFORESPØRSLER
-+----------------------------------------------------------------+
-| [Alle] [Nye brukere] [Passord-reset]                           |
-+----------------------------------------------------------------+
-| 🔑 Navn         | E-post           | Type       | Handlinger   |
-| ola.nordmann    | ola@firma.no     | Ny bruker  | [✓] [✗]      |
-+----------------------------------------------------------------+
+KOMMENTARER
++-----------------------------------------------------------+
+| 💬 Kari Hansen - 27. jan                                  |
+| "Kan vi legge til mer info om brannslukker?"             |
+| [Svar] [Løst ✓]                                          |
+|                                                           |
+|   └─ Ola Nordmann - 28. jan                              |
+|      "Lagt til i avsnitt 3"                              |
++-----------------------------------------------------------+
 ```
 
-### B4. Auth-side Endringer
-
-Erstatter "Registrer"-tab med "Be om tilgang":
+### UI: Versjonshistorikk
 
 ```text
-+-----------------------------------+
-| Logg inn                          |
-+-----------------------------------+
-| E-post: [____________]            |
-| Passord: [____________]           |
-| [Logg inn]                        |
-+-----------------------------------+
-| Har du ikke tilgang?              |
-| [Be om tilgang]  ← Ny knapp       |
-+-----------------------------------+
+REVISJONSHISTORIKK
++-----------------------------------------------------------+
+| v1.2  | 28. jan 2026 | Ola N.   | Oppdatert sikkerhet    |
+| v1.1  | 15. jan 2026 | Kari H.  | Lagt til brannøvelse   |
+| v1.0  | 01. jan 2026 | Per S.   | Første versjon         |
++-----------------------------------------------------------+
+| [Sammenlign versjoner] [Gjenopprett v1.1]                 |
++-----------------------------------------------------------+
 ```
 
 ---
 
-## Del C: E-post via Outlook (mailto)
+## Del 6: Teknisk Implementering
 
-Alle e-poster åpnes i brukerens e-postklient - ingen automatisk utsending:
-
-```typescript
-// Nye e-postmaler i email.ts:
-generateNewUserEmail(name, email, tempPassword, expiresAt, loginUrl)
-generatePasswordResetEmail(name, email, newPassword, expiresAt, loginUrl)
-generateBulkImportEmail(users[], loginUrl)
-```
-
----
-
-## Nye Filer
+### Nye filer
 
 | Fil | Beskrivelse |
 |-----|-------------|
 | **Database** | |
-| `supabase/migrations/xxx_access_requests.sql` | Nye tabeller med RLS |
-| **Edge Function** | |
-| `supabase/functions/create-user/index.ts` | Brukeroppretting med service role |
+| `supabase/migrations/xxx_procedure_enhancements.sql` | Metadata, vedlegg, kommentarer |
 | **Hooks** | |
-| `src/hooks/useAccessRequests.ts` | CRUD for tilgangsforespørsler |
-| `src/hooks/useUserInvitations.ts` | CRUD for invitasjoner |
+| `src/hooks/useProcedureAttachments.ts` | CRUD for vedlegg |
+| `src/hooks/useProcedureComments.ts` | CRUD for kommentarer |
+| `src/hooks/useProcedureRevisions.ts` | Versjonshistorikk |
 | **Komponenter** | |
-| `src/components/admin/CreateUserDialog.tsx` | Manuell brukeroppretting |
-| `src/components/admin/ExcelImportDialog.tsx` | Excel-import med forhåndsvisning |
-| `src/components/admin/AccessRequestsTable.tsx` | Tabell for forespørsler |
-| `src/components/admin/ApproveRequestDialog.tsx` | Godkjenningsdialog med passord |
-| `src/components/admin/InvitationsTable.tsx` | Ventende invitasjoner |
-| **Hjelpefunksjoner** | |
-| `src/lib/password-generator.ts` | Sikker passordgenerering |
-| `src/lib/excel-utils.ts` | Excel parsing og mal-generering |
+| `src/components/procedure/MetadataSection.tsx` | Metadata-skjema |
+| `src/components/procedure/AttachmentsSection.tsx` | Vedlegg-opplasting |
+| `src/components/procedure/CommentsPanel.tsx` | Kommentar-panel |
+| `src/components/procedure/RevisionHistory.tsx` | Historikk-visning |
+| `src/components/procedure/ExportMenu.tsx` | Eksport-dropdown |
+| **Lib** | |
+| `src/lib/pdf-export.ts` | PDF-generering |
+| `src/lib/word-export.ts` | Word-generering |
 
-### Oppdaterte Filer
+### Oppdaterte filer
 
 | Fil | Endring |
 |-----|---------|
-| `AppHeader.tsx` | Dropdown med profil og logg ut |
-| `Sidebar.tsx` | Fjern "Min profil" |
-| `MobileNav.tsx` | Fjern "Min profil" |
-| `AdminUsers.tsx` | Tabs, KPI-kort, handlingsknapper |
-| `Auth.tsx` | "Be om tilgang" i stedet for registrering |
-| `email.ts` | Nye e-postmaler for brukere |
+| `ProcedureEditor.tsx` | Nye blokktyper, metadata, vedlegg, eksport |
+| `ProcedureViewer.tsx` | Fjerne quiz/checkpoint-håndtering, legge til vedlegg |
+| `useProcedureMutations.ts` | Støtte for nye felt |
+| `storage.ts` | Vedlegg-opplasting |
 
 ---
 
-## Teknisk Implementering
-
-### Passordgenerator
-
-```typescript
-// src/lib/password-generator.ts
-const LOWERCASE = 'abcdefghijkmnopqrstuvwxyz';  // Uten l
-const UPPERCASE = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // Uten I, O
-const NUMBERS = '23456789';                      // Uten 0, 1
-const SPECIAL = '!@#$%&*';
-
-export function generateSecurePassword(length = 12): string {
-  // Sørger for minst én av hver type
-  // Shuffler resultatet
-}
-```
-
-### Excel-utils
-
-```typescript
-// src/lib/excel-utils.ts
-export function parseExcelFile(file: File): Promise<ImportUser[]>
-export function generateExcelTemplate(): Blob
-export function downloadExcelTemplate(): void
-```
-
-### CreateUserDialog
-
-```typescript
-function CreateUserDialog() {
-  // 1. Fylle inn e-post, navn
-  // 2. Velge site
-  // 3. Generere midlertidig passord
-  // 4. Sette utløpsdato (default 7 dager)
-  // 5. Klikk "Opprett og send e-post"
-  // 6. Edge function oppretter bruker
-  // 7. mailto: åpner Outlook med ferdig e-post
-}
-```
-
-### Header Dropdown
-
-```typescript
-function AppHeader() {
-  const initials = getInitials(displayName);
-  
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger>
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
-          {initials}
-        </div>
-        <ChevronDown />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuItem asChild>
-          <Link to="/profile">Min profil</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={signOut}>
-          Logg ut
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-```
-
----
-
-## Arbeidsflyt: Ny Bruker
+## Del 7: Oppdatert Prosedyreeditor-layout
 
 ```text
-1. Admin klikker "Opprett bruker"
-2. Fyller inn e-post, navn, velger site
-3. Midlertidig passord genereres automatisk
-4. Utløpsdato settes (default 7 dager)
-5. Admin klikker "Opprett og send e-post"
-6. Edge function oppretter bruker i Supabase Auth
-7. Invitation lagres i user_invitations
-8. Outlook åpnes med ferdig utfylt e-post
-9. Admin sender e-posten manuelt
-10. Bruker mottar e-post, logger inn, bytter passord
-```
++-----------------------------------------------------------+
+| ← Tilbake                                                  |
+| Rediger prosedyre                     [Eksporter ▼] [Lagre]|
+| Site: Hovedkontoret                                        |
++-----------------------------------------------------------+
 
-## Arbeidsflyt: Be om Tilgang
+TABS: [Innhold] [Metadata] [Vedlegg] [Kommentarer] [Historikk]
 
-```text
-1. Ny person går til innloggingssiden
-2. Klikker "Be om tilgang"
-3. Fyller inn e-post, navn, firma
-4. Forespørsel lagres i access_requests
-5. Admin ser forespørselen i listen
-6. Admin klikker "Godkjenn"
-7. Dialog åpnes med generert passord og site-valg
-8. Admin bekrefter - bruker opprettes
-9. Outlook åpnes med velkomst-e-post
-```
+=== INNHOLD-TAB ===
 
-## Arbeidsflyt: Excel-import
+Tittel *  [HMS Introduksjon_____________________]
+Beskrivelse [Kort beskrivelse av prosedyren____]
 
-```text
-1. Admin laster ned Excel-mal
-2. Fyller inn brukere (e-post, navn, avdeling, stilling)
-3. Laster opp filen
-4. Forhåndsvisning vises med validering
-5. Admin velger site og utløpsdato
-6. Admin bekrefter import
-7. Alle brukere opprettes sekvensielt
-8. Samlet e-post genereres med alle brukere
-9. Outlook åpnes - admin sender e-posten
+INNHOLDSBLOKKER
++-----------------------------------------------------------+
+| [+ Tekst] [+ Overskrift] [+ Bilde] [+ Video] [+ Advarsel] |
++-----------------------------------------------------------+
+
+[Blokk 1: Tekst] ↕️ 🗑
+| Formålet med denne prosedyren er å...                     |
+
+[Blokk 2: Advarsel] ↕️ 🗑
+| ⚠️ VIKTIG: Bruk alltid verneutstyr...                     |
+
+[Blokk 3: Bilde] ↕️ 🗑
+| [Sikkerhetsutstyr.jpg]                                    |
+
+=== METADATA-TAB ===
+
++-----------------------------------------------------------+
+| Kategori       [HMS ▼]           Versjon      [1.0]       |
+| Dok.nummer     [HMS-001]         Status       [Utkast ▼]  |
+| Revisjonsdato  [28.01.2027]      Godkjent av  [Velg...]   |
+| Tagger         [sikkerhet] [brann] [+ Ny]                 |
++-----------------------------------------------------------+
+
+=== VEDLEGG-TAB ===
+
+[📎 Last opp vedlegg]
+
++-----------------------------------------------------------+
+| Fil                    | Størrelse | Lastet opp | Handling |
+|------------------------|-----------|------------|----------|
+| Brannøvelse.pdf        | 245 KB    | 28. jan    | [👁] [🗑]|
+| HMS-sjekkliste.xlsx    | 128 KB    | 27. jan    | [👁] [🗑]|
++-----------------------------------------------------------+
 ```
 
 ---
 
-## Implementeringsrekkefølge
+## Del 8: Implementeringsrekkefølge
 
-1. **Header-oppdatering** - Dropdown med profil, fjern fra sidebar
-2. **Database-migrering** - access_requests og user_invitations
-3. **Edge Function** - create-user for admin-oppretting
-4. **Hjelpefunksjoner** - password-generator, excel-utils, email-maler
-5. **Hooks** - useAccessRequests, useUserInvitations
-6. **Komponenter** - CreateUserDialog, AccessRequestsTable, ExcelImportDialog
-7. **AdminUsers.tsx** - Ny tabs-struktur med alle funksjoner
-8. **Auth.tsx** - "Be om tilgang" erstatter registrering
-
----
-
-## Sikkerhet
-
-- Edge function validerer at kaller er admin via JWT
-- Midlertidige passord hastes aldri - kun vist én gang
-- Invitasjoner utløper automatisk
-- RLS policies beskytter alle tabeller
-- Ingen automatisk e-postutsending - unngår spam-filter
+1. **Database-migrering** - Nye kolonner og tabeller
+2. **Rydde blokktyper** - Fjerne quiz/checkpoint fra prosedyrer
+3. **Metadata-seksjon** - Nye felt i editor
+4. **Vedlegg-funksjonalitet** - Opplasting og visning
+5. **Eksport** - PDF og Word
+6. **Kommentarer** - Samarbeidsfunksjoner
+7. **Versjonshistorikk** - Revisjonssporing
 
 ---
 
 ## Resultat
 
-- **Profil i header** med dropdown-meny og initialer
-- **Manuell brukeroppretting** med midlertidig passord
-- **Excel-import** for bulk-oppretting
-- **Tilgangsforespørsler** fra nye brukere
-- **E-post via Outlook** - ingen spam-problemer
-- **Passord-utløp** for sikkerhet
-- **Ingen selvregistrering** - kun admin kan gi tilgang
+- **Rene prosedyrer** - Referansedokumenter uten quiz (quiz flyttes til kurs)
+- **Rik metadata** - Kategori, versjon, godkjenning, revisjonsplan
+- **Vedlegg-støtte** - Last opp og koble filer
+- **Profesjonell eksport** - PDF/Word med firmalogo og formatering
+- **Samarbeid** - Kommentarer og versjonshistorikk som Google Docs
+- **Sporbarhet** - Full revisjonshistorikk for compliance
 
