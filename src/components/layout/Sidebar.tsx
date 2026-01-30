@@ -36,16 +36,11 @@ export function Sidebar() {
   return (
     <aside className="hidden w-64 shrink-0 border-r border-border bg-card lg:block">
       <nav className="flex h-[calc(100vh-4rem)] flex-col gap-2 overflow-y-auto p-4">
-        {/* Dashboard og Profil - alltid synlig */}
+        {/* Dashboard */}
         <div className="space-y-1">
           <NavLink to="/" className={navLinkClasses} end>
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
-          </NavLink>
-
-          <NavLink to="/profile" className={navLinkClasses}>
-            <User className="h-4 w-4" />
-            Min profil
           </NavLink>
         </div>
 
