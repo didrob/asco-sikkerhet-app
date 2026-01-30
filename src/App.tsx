@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Procedures from "./pages/Procedures";
 import ProcedureViewer from "./pages/ProcedureViewer";
+import ProcedureEditor from "./pages/ProcedureEditor";
 import ManageProcedures from "./pages/ManageProcedures";
 import AdminSites from "./pages/admin/AdminSites";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -48,8 +49,10 @@ const App = () => (
             
             {/* Procedure routes */}
             <Route path="/procedures" element={<ProtectedWithSite><Procedures /></ProtectedWithSite>} />
-            <Route path="/procedures/:id" element={<ProtectedWithSite><ProcedureViewer /></ProtectedWithSite>} />
+            <Route path="/procedures/new" element={<ProtectedWithSite><ProcedureEditor /></ProtectedWithSite>} />
             <Route path="/procedures/manage" element={<ProtectedWithSite><ManageProcedures /></ProtectedWithSite>} />
+            <Route path="/procedures/:id" element={<ProtectedWithSite><ProcedureViewer /></ProtectedWithSite>} />
+            <Route path="/procedures/:id/edit" element={<ProtectedWithSite><ProcedureEditor /></ProtectedWithSite>} />
             
             {/* Admin routes */}
             <Route path="/admin/sites" element={<ProtectedWithSite><AdminSites /></ProtectedWithSite>} />

@@ -1,12 +1,25 @@
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useProcedures } from '@/hooks/useProcedures';
+import { useDeleteProcedure } from '@/hooks/useProcedureMutations';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { useCanManageProcedures } from '@/hooks/useUserRoles';
 import { SiteSelector } from '@/components/dashboard/SiteSelector';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { 
   Plus, 
   FileText, 
@@ -45,9 +58,11 @@ function ManageProceduresSkeleton() {
 }
 
 export default function ManageProcedures() {
+  const navigate = useNavigate();
   const { currentSite, sites } = useSiteContext();
   const { data: canManage, isLoading: roleLoading } = useCanManageProcedures(currentSite?.id || null);
   const { data: procedures, isLoading: proceduresLoading } = useProcedures(currentSite?.id || null);
+  const deleteProcedure = useDeleteProcedure();
 
   const isLoading = roleLoading || proceduresLoading;
 
@@ -80,7 +95,7 @@ export default function ManageProcedures() {
               Opprett, rediger og publiser sikkerhetsprosedyrer
             </p>
           </div>
-          <Button>
+          <Button onClick={() => navigate('/procedures/new')}>
             <Plus className="mr-2 h-4 w-4" />
             Ny prosedyre
           </Button>
@@ -110,7 +125,7 @@ export default function ManageProcedures() {
               <p className="mb-4 text-muted-foreground">
                 Ingen prosedyrer opprettet for denne siten ennå.
               </p>
-              <Button>
+              <Button onClick={() => navigate('/procedures/new')}>
                 <Plus className="mr-2 h-4 w-4" />
                 Opprett din første prosedyre
               </Button>
@@ -148,15 +163,52 @@ export default function ManageProcedures() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" title="Forhåndsvis">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Forhåndsvis"
+                      onClick={() => navigate(`/procedures/${procedure.id}`)}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" title="Rediger">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Rediger"
+                      onClick={() => navigate(`/procedures/${procedure.id}/edit`)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" title="Slett" className="text-destructive hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Slett" 
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Slett prosedyre</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Er du sikker på at du vil slette "{procedure.title}"? 
+                            Dette kan ikke angres.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteProcedure.mutate(procedure.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Slett
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
