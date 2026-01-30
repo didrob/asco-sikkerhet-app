@@ -1,119 +1,90 @@
-# Refaktorering av Prosedyremodul med Metadata, Eksport og Vedlegg
 
-## ✅ Status: Implementert
 
-Denne planen er implementert. Her er en oversikt over hva som ble gjort:
+# White-labeling: Fjerne Lovable-branding og Oppdatere Favicon
 
----
+## Oversikt
 
-## ✅ Del 1: Rydde opp i Prosedyreeditor
-
-**Gjennomført:** Quiz og checkpoint blokktyper er fjernet fra prosedyreeditor. Nye blokktyper lagt til:
-- Tekst
-- Overskrift
-- Bilde
-- Video
-- Advarsel/viktig
-- Punktliste
+Erstatter alle Lovable-referanser med ASCO-branding, inkludert:
+1. Favicon i browser-fane
+2. Open Graph og Twitter meta-bilder
+3. Twitter-konto referanse
 
 ---
 
-## ✅ Del 2: Utvidet Metadata
+## Endringer
 
-**Database-kolonner lagt til i `procedures`-tabellen:**
-- `category` (TEXT)
-- `version` (TEXT, default '1.0')
-- `approved_by` (UUID)
-- `approved_at` (TIMESTAMPTZ)
-- `review_date` (DATE)
-- `document_number` (TEXT)
-- `tags` (TEXT[])
-- `author_id` (UUID)
+### 1. Favicon
 
-**UI-komponent:** `MetadataSection.tsx` med alle felt inkludert kategori-velger, versjon, dokumentnummer, revisjonsdato og tagger.
+**Handling**: Kopiere brukerens opplastede ASCO-ikon til `public/`
 
----
+```bash
+# Kopiere liten logo til public mappe
+lov-copy user-uploads://image-11.png public/favicon.png
+```
 
-## ✅ Del 3: Vedlegg
+**Oppdatere index.html**:
 
-**Ny tabell:** `procedure_attachments` med RLS-policies
+```html
+<!-- FØR -->
+<!-- (ingen eksplisitt favicon-link, bruker default favicon.ico) -->
 
-**Storage bucket:** `procedure-attachments` (50MB maks)
-
-**Hooks:** `useProcedureAttachments.ts` med upload/delete/list
-
-**UI-komponent:** `AttachmentsSection.tsx` med filopplasting og tabell
+<!-- ETTER -->
+<link rel="icon" href="/favicon.png" type="image/png">
+```
 
 ---
 
-## ✅ Del 4: PDF/Word Eksport
+### 2. Open Graph Bilder
 
-**Biblioteker installert:**
-- `jspdf` for PDF-generering
-- `docx` for Word-generering
-- `file-saver` for nedlasting
+**Handling**: Kopiere større logo til public for OG-bilder
 
-**Lib-filer:**
-- `src/lib/pdf-export.ts` - Profesjonell PDF med header, metadata, innhold
-- `src/lib/word-export.ts` - Word-dokument med samme struktur
+```bash
+lov-copy user-uploads://image-12.png public/og-image.png
+```
 
-**UI-komponent:** `ExportMenu.tsx` med dropdown for PDF/Word valg
+**Oppdatere index.html**:
 
----
+```html
+<!-- FØR -->
+<meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+<meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+<meta name="twitter:site" content="@Lovable" />
 
-## ✅ Del 5: Samarbeid
-
-**Nye tabeller:**
-- `procedure_comments` - Kommentarer med tråder og status
-- `procedure_revisions` - Versjonshistorikk med snapshots
-
-**Hooks:**
-- `useProcedureComments.ts` - CRUD for kommentarer med svar
-- `useProcedureRevisions.ts` - Historikk og gjenoppretting
-
-**UI-komponenter:**
-- `CommentsPanel.tsx` - Kommentarfelt, tråder, løst/gjenåpne
-- `RevisionHistory.tsx` - Historikktabell med gjenopprett-funksjon
+<!-- ETTER -->
+<meta property="og:image" content="/og-image.png" />
+<meta name="twitter:image" content="/og-image.png" />
+<meta name="twitter:site" content="@ASCO" />
+```
 
 ---
 
-## ✅ Del 6: Oppdatert ProcedureEditor
+### 3. Slette gammel favicon
 
-**Ny tabs-struktur:**
-1. **Innhold** - Tittel, beskrivelse, innholdsblokker
-2. **Metadata** - Kategori, versjon, dokumentnummer, tagger
-3. **Vedlegg** - Filopplasting og liste
-4. **Kommentarer** - Samarbeid og diskusjon
-5. **Historikk** - Revisjonshistorikk
+**Handling**: Fjerne den gamle Lovable `favicon.ico`:
+
+```
+public/favicon.ico  → SLETT
+```
 
 ---
 
-## Filstruktur
+## Fil-endringer
 
-### Nye filer
-| Fil | Beskrivelse |
-|-----|-------------|
-| `src/hooks/useProcedureAttachments.ts` | CRUD for vedlegg |
-| `src/hooks/useProcedureComments.ts` | CRUD for kommentarer |
-| `src/hooks/useProcedureRevisions.ts` | Versjonshistorikk |
-| `src/components/procedure/MetadataSection.tsx` | Metadata-skjema |
-| `src/components/procedure/AttachmentsSection.tsx` | Vedlegg-seksjon |
-| `src/components/procedure/CommentsPanel.tsx` | Kommentar-panel |
-| `src/components/procedure/RevisionHistory.tsx` | Historikk-tabell |
-| `src/components/procedure/ExportMenu.tsx` | Eksport-dropdown |
-| `src/lib/pdf-export.ts` | PDF-generering |
-| `src/lib/word-export.ts` | Word-generering |
-
-### Oppdaterte filer
 | Fil | Endring |
 |-----|---------|
-| `ProcedureEditor.tsx` | Ny tabs-struktur, nye blokktyper, eksport |
-| `useProcedureMutations.ts` | Støtte for metadata-felt |
+| `public/favicon.png` | NY - ASCO-ikon for browser-fane |
+| `public/og-image.png` | NY - ASCO-logo for deling på sosiale medier |
+| `public/favicon.ico` | SLETT - Gammel Lovable favicon |
+| `index.html` | Oppdater favicon-link, OG-bilder og Twitter-konto |
 
 ---
 
-## Neste steg (valgfritt)
+## Resultat
 
-1. **ProcedureViewer.tsx** - Oppdatere for å vise vedlegg og nye blokktyper
-2. **Kurseditor** - Flytte quiz/checkpoint hit
-3. **Godkjenning** - Implementere godkjenningsflyt med approved_by/approved_at
+Etter implementering:
+
+- **Browser-fane**: Viser ASCO-ikonet (turkis sirkel med A)
+- **Deling på sosiale medier**: Viser ASCO-logo i stedet for Lovable
+- **Twitter**: Refererer til @ASCO i stedet for @Lovable
+- **Ingen Lovable-referanser** synlig for sluttbrukere
+
