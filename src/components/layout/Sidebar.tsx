@@ -8,7 +8,10 @@ import {
   LayoutDashboard,
   BarChart3,
   Crown,
-  Award
+  BookOpen,
+  Users,
+  Send,
+  History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsAdmin, useCanManageProcedures } from '@/hooks/useUserRoles';
@@ -44,12 +47,27 @@ export function Sidebar() {
             <FileText className="h-4 w-4" />
             Prosedyrer
           </NavLink>
+        </div>
 
-          <NavLink to="/certificates" className={navLinkClasses}>
-            <Award className="h-4 w-4" />
-            Mine sertifikater
+        {/* Training section */}
+        <div className="mt-4 space-y-1">
+          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Opplæring
+          </p>
+          
+          <NavLink to="/training" className={navLinkClasses}>
+            <BookOpen className="h-4 w-4" />
+            Aktive kurs
           </NavLink>
 
+          <NavLink to="/training/history" className={navLinkClasses}>
+            <History className="h-4 w-4" />
+            Min opplæringshistorikk
+          </NavLink>
+        </div>
+
+        {/* User section */}
+        <div className="mt-4 space-y-1">
           <NavLink to="/profile" className={navLinkClasses}>
             <User className="h-4 w-4" />
             Min profil
@@ -67,7 +85,22 @@ export function Sidebar() {
               <>
                 <NavLink to="/procedures/manage" className={navLinkClasses}>
                   <Shield className="h-4 w-4" />
-                  Administrer prosedyrer
+                  Prosedyrer
+                </NavLink>
+
+                <NavLink to="/training/manage" className={navLinkClasses}>
+                  <BookOpen className="h-4 w-4" />
+                  Kurs
+                </NavLink>
+
+                <NavLink to="/training/groups" className={navLinkClasses}>
+                  <Users className="h-4 w-4" />
+                  Grupper
+                </NavLink>
+
+                <NavLink to="/training/overview" className={navLinkClasses}>
+                  <BarChart3 className="h-4 w-4" />
+                  Opplæringsoversikt
                 </NavLink>
 
                 <NavLink to="/admin/reports" className={navLinkClasses}>

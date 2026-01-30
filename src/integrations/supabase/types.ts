@@ -285,6 +285,224 @@ export type Database = {
         }
         Relationships: []
       }
+      training_assignments: {
+        Row: {
+          assigned_by: string | null
+          completed_at: string | null
+          course_id: string
+          created_at: string | null
+          due_date: string | null
+          group_id: string | null
+          id: string
+          passed: boolean | null
+          score: number | null
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          course_id: string
+          created_at?: string | null
+          due_date?: string | null
+          group_id?: string | null
+          id?: string
+          passed?: boolean | null
+          score?: number | null
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string | null
+          due_date?: string | null
+          group_id?: string | null
+          id?: string
+          passed?: boolean | null
+          score?: number | null
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "training_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "training_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_courses: {
+        Row: {
+          content_blocks: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          pass_threshold: number | null
+          procedure_ids: string[]
+          required_for_roles: string[] | null
+          site_id: string
+          status: Database["public"]["Enums"]["procedure_status"] | null
+          title: string
+          training_type: Database["public"]["Enums"]["training_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          content_blocks?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          pass_threshold?: number | null
+          procedure_ids?: string[]
+          required_for_roles?: string[] | null
+          site_id: string
+          status?: Database["public"]["Enums"]["procedure_status"] | null
+          title: string
+          training_type?: Database["public"]["Enums"]["training_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          content_blocks?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          pass_threshold?: number | null
+          procedure_ids?: string[]
+          required_for_roles?: string[] | null
+          site_id?: string
+          status?: Database["public"]["Enums"]["procedure_status"] | null
+          title?: string
+          training_type?: Database["public"]["Enums"]["training_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_courses_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_group_members: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          group_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          group_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          group_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "training_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_groups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          site_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          site_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          site_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_groups_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_progress: {
+        Row: {
+          answers: Json | null
+          assignment_id: string
+          current_block_index: number | null
+          id: string
+          last_activity_at: string | null
+          started_at: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          assignment_id: string
+          current_block_index?: number | null
+          id?: string
+          last_activity_at?: string | null
+          started_at?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          assignment_id?: string
+          current_block_index?: number | null
+          id?: string
+          last_activity_at?: string | null
+          started_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_progress_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "training_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -383,6 +601,7 @@ export type Database = {
         | "auditor"
       completion_status: "not_started" | "in_progress" | "completed" | "expired"
       procedure_status: "draft" | "published" | "archived"
+      training_type: "theoretical" | "practical" | "video" | "mixed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -520,6 +739,7 @@ export const Constants = {
       ],
       completion_status: ["not_started", "in_progress", "completed", "expired"],
       procedure_status: ["draft", "published", "archived"],
+      training_type: ["theoretical", "practical", "video", "mixed"],
     },
   },
 } as const
