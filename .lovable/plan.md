@@ -1,143 +1,204 @@
 
 
-# Database Migrasjoner for ASCO Digital Safety Operations
+# Dashboard med Brukerdata og Rollebasert Navigasjon
 
 ## Oversikt
-Jeg vil nå opprette alle database-migrasjonene for å sette opp det komplette multi-tenant skjemaet for sikkerhetsoperasjonsplattformen. Migrasjonene vil bli kjørt i riktig rekkefølge for å sikre at avhengigheter håndteres korrekt.
+Bygger ut dashboardet til å vise dynamisk data fra Supabase - brukerens profil, tildelte sites, roller og tilgjengelige prosedyrer. Inkluderer også en site-velger for multi-tenant kontekst.
 
 ---
 
-## Migrasjonsplan
+## Nye Komponenter
 
-### Migrasjon 1: Enums og Security Functions
-Oppretter grunnleggende typer og sikkerhetsfunksjoner som brukes av alle andre tabeller.
+### 1. Custom Hooks for Datahenting
 
-**Innhold:**
-- `app_role` enum (admin, operator, supervisor, viewer)
-- `procedure_status` enum (draft, published, archived)
-- `completion_status` enum (not_started, in_progress, completed, expired)
-- `has_role()` security definer funksjon
-- `has_site_access()` security definer funksjon
-- `get_user_sites()` security definer funksjon
+**`src/hooks/useProfile.ts`**
+- Henter brukerens profil fra `profiles`-tabellen
+- Oppdaterer profil ved behov
+- Caching med React Query
+
+**`src/hooks/useUserRoles.ts`**
+- Henter brukerens roller fra `user_roles`
+- Sjekker admin-status via `is_admin()` funksjonen
+- Returnerer roller per site
+
+**`src/hooks/useSites.ts`**
+- Henter brukerens tildelte sites fra `sites` via `user_site_assignments`
+- Støtter site-bytte
+
+**`src/hooks/useProcedures.ts`**
+- Henter prosedyrer for valgt site
+- Filtrerer på `status = 'published'`
+- Inkluderer fremgangsstatus fra `procedure_progress`
 
 ---
 
-### Migrasjon 2: Sites og User Tables
-Oppretter multi-tenant grunnlag og brukerhåndtering.
+### 2. Site Context Provider
 
-**Tabeller:**
-- `sites` - Multi-tenant site-struktur
-  - id, name, location, settings (JSONB), active, created_at, updated_at
+**`src/contexts/SiteContext.tsx`**
+- Holder styr på valgt site (`currentSite`)
+- Synkroniserer med `profiles.current_site_id`
+- Brukes av alle komponenter som trenger site-kontekst
+
+---
+
+### 3. Layout-komponenter
+
+**`src/components/layout/AppHeader.tsx`**
+- Logo og app-navn
+- Site-velger dropdown
+- Brukerinfo og logg ut-knapp
+
+**`src/components/layout/AppLayout.tsx`**
+- Wrapper for hele appen
+- Header + sidebar + main content area
+- Responsiv design
+
+**`src/components/layout/Sidebar.tsx`**
+- Navigasjonsmeny basert på brukerens rolle
+- Admin-lenker vises kun for admins/supervisors
+- Prosedyrer, Profil, Sites-lenker
+
+---
+
+### 4. Dashboard-komponenter
+
+**`src/components/dashboard/SiteSelector.tsx`**
+- Dropdown for å velge aktiv site
+- Viser alle sites brukeren har tilgang til
+- Lagrer valg i profil
+
+**`src/components/dashboard/ProcedureList.tsx`**
+- Liste over prosedyrer for valgt site
+- Viser fremgangsstatus (ikke startet, påbegynt, fullført)
+- Link til prosedyre-viewer
+
+**`src/components/dashboard/UserStats.tsx`**
+- Statistikk-kort
+- Antall fullførte prosedyrer
+- Antall påbegynte
+- Neste forfallsdato
+
+**`src/components/dashboard/WelcomeCard.tsx`**
+- Velkomstmelding med brukernavn
+- Oversikt over dagens oppgaver
+
+---
+
+### 5. Oppdatert Index-side
+
+**`src/pages/Index.tsx`** (refaktorert)
+- Bruker nye hooks for datahenting
+- Viser SiteSelector hvis flere sites
+- Dynamisk ProcedureList
+- Statistikk-kort med ekte data
+
+---
+
+## Nye Ruter
+
+| Rute | Komponent | Beskrivelse |
+|------|-----------|-------------|
+| `/` | Dashboard | Hovedside med prosedyrer og stats |
+| `/profile` | ProfilePage | Rediger profil |
+| `/procedures/:id` | ProcedureViewer | Se/fullfør prosedyre |
+
+---
+
+## Tekniske Detaljer
+
+### React Query Oppsett
+```typescript
+// Eksempel på useProfile hook
+export function useProfile() {
+  const { user } = useAuth();
   
-- `profiles` - Brukerprofiler
-  - id (refererer til auth.users), full_name, avatar_url, job_title, department, current_site_id, created_at, updated_at
-  
-- `user_roles` - Rolletildelinger (sikkerhetskritisk)
-  - id, user_id, site_id, role (app_role enum)
-  - Unique constraint på (user_id, site_id, role)
-  
-- `user_site_assignments` - Hvilke sites brukeren har tilgang til
-  - id, user_id, site_id, assigned_at, assigned_by
+  return useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user!.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+}
+```
 
-**RLS Policies:**
-- Sites: SELECT for tilordnede brukere, CRUD for admins
-- Profiles: SELECT egen + kolleger, UPDATE egen
-- User Roles: Kun via security definer funksjon
-- Site Assignments: SELECT egen, CRUD for admins
+### Site Context
+```typescript
+interface SiteContextType {
+  currentSite: Site | null;
+  sites: Site[];
+  setCurrentSite: (site: Site) => void;
+  isLoading: boolean;
+}
+```
 
----
-
-### Migrasjon 3: Procedures
-Oppretter prosedyre-tabellen med JSONB innholdsstruktur.
-
-**Tabell:**
-- `procedures`
-  - id, site_id, title, description, status (procedure_status)
-  - content_blocks (JSONB) - fleksibel innholdsstruktur
-  - required_for_roles (text[]) - hvilke roller må fullføre
-  - due_date, recurrence_interval (interval)
-  - created_by, created_at, updated_at
-
-**RLS Policies:**
-- SELECT: Basert på site-tilordning og rolle
-- INSERT/UPDATE/DELETE: Admins og supervisors
-
----
-
-### Migrasjon 4: Progress, Completions og Audit
-Oppretter tabeller for fremgang, fullføringer og revisjonsspor.
-
-**Tabeller:**
-- `procedure_progress` - Brukerens posisjon i en prosedyre
-  - id, user_id, procedure_id, current_block_index
-  - checkpoint_answers (JSONB), started_at, last_activity_at
-  
-- `quiz_attempts` - Registrerer hvert spørsmålsforsøk
-  - id, user_id, procedure_id, question_id
-  - selected_answer, is_correct, attempted_at
-  
-- `procedure_completions` - Signaturer og fullføringer
-  - id, user_id, procedure_id
-  - signature_text, signature_storage_path
-  - completed_at, expires_at
-  
-- `audit_log` - Uforanderlig revisjonslogg
-  - id, user_id, action, resource_type, resource_id
-  - metadata (JSONB), ip_address, created_at
-
-**RLS Policies:**
-- Progress: CRUD for egen bruker
-- Completions: SELECT egen + site for admins, INSERT egen, ingen UPDATE/DELETE
-- Audit: SELECT for admins, INSERT for autentiserte, ingen UPDATE/DELETE
+### Rollebasert UI
+```typescript
+// I Sidebar - vis admin-lenker kun for admins
+{isAdmin && (
+  <NavLink to="/admin">
+    <Settings className="h-4 w-4" />
+    Administrasjon
+  </NavLink>
+)}
+```
 
 ---
 
-### Migrasjon 5: Storage Buckets
-Oppretter lagringsbøtter for media og signaturer.
+## Filstruktur Etter Implementering
 
-**Buckets:**
-- `avatars` - Offentlig, for profilbilder
-- `procedure-media` - Offentlig, for prosedyre-bilder og videoer
-- `signatures` - Privat, for tegnede signaturer
-
-**RLS Policies:**
-- Avatars: Upload/update egen, alle kan lese
-- Procedure Media: Admins kan laste opp, alle autentiserte kan lese
-- Signatures: Upload egen, admins kan lese alle
-
----
-
-### Migrasjon 6: Triggers
-Oppretter automatiske triggere for profilering og tidsstempling.
-
-**Triggers:**
-- `handle_new_user` - Auto-oppretter profil ved brukerregistrering
-- `update_updated_at` - Auto-oppdaterer `updated_at` på alle tabeller
-
----
-
-## Teknisk Implementering
-
-Migrasjonene vil bli opprettet som separate SQL-filer i riktig rekkefølge:
-
-1. `001_enums_and_functions.sql` - Enums og security definer funksjoner
-2. `002_sites_and_users.sql` - Sites, profiles, roles, assignments med RLS
-3. `003_procedures.sql` - Prosedyrer med JSONB innhold
-4. `004_progress_and_completions.sql` - Progress, completions, audit log
-5. `005_storage_buckets.sql` - Lagringsbøtter med policies
-6. `006_triggers.sql` - Auto-profilering og timestamp-triggere
+```text
+src/
+├── components/
+│   ├── dashboard/
+│   │   ├── ProcedureList.tsx
+│   │   ├── SiteSelector.tsx
+│   │   ├── UserStats.tsx
+│   │   └── WelcomeCard.tsx
+│   ├── layout/
+│   │   ├── AppHeader.tsx
+│   │   ├── AppLayout.tsx
+│   │   └── Sidebar.tsx
+│   └── ui/
+├── contexts/
+│   ├── AuthContext.tsx
+│   └── SiteContext.tsx
+├── hooks/
+│   ├── useProfile.ts
+│   ├── useUserRoles.ts
+│   ├── useSites.ts
+│   └── useProcedures.ts
+└── pages/
+    ├── Index.tsx (refaktorert)
+    └── Profile.tsx (ny)
+```
 
 ---
 
-## Etter Migrasjonene
+## Implementeringsrekkefølge
 
-Når alle migrasjonene er kjørt, vil Supabase-prosjektet ha:
-- Komplett multi-tenant databaseskjema
-- Sikker rollebasert tilgangskontroll
-- Fleksibel JSONB-struktur for prosedyreinnhold
-- Revisjonsspor for compliance
-- Lagring for media og signaturer
-- Alle RLS-policyer konfigurert
+1. **Hooks** - useProfile, useUserRoles, useSites, useProcedures
+2. **SiteContext** - Global site-kontekst
+3. **Layout** - AppLayout, AppHeader, Sidebar
+4. **Dashboard-komponenter** - SiteSelector, ProcedureList, UserStats
+5. **Oppdater Index.tsx** - Integrer alle nye komponenter
+6. **Profilside** - Ny side for å redigere profil
 
-**Viktig:** Etter at tabellene er opprettet, må autentisering implementeres i frontend for at RLS-policyene skal fungere.
+---
+
+## Hva Du Vil Se
+
+Etter implementering vil dashboardet:
+- Vise brukerens navn (fra profil) i stedet for bare e-post
+- Ha en site-velger hvis brukeren har flere sites
+- Liste prosedyrer med fremgangsstatus
+- Vise statistikk over fullførte prosedyrer
+- Ha rollebasert navigasjon (admin-lenker for admins)
 
