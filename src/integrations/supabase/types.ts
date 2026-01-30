@@ -565,6 +565,38 @@ export type Database = {
           },
         ]
       }
+      training_reminders: {
+        Row: {
+          assignment_id: string
+          id: string
+          reminder_type: string
+          sent_at: string
+          sent_by: string | null
+        }
+        Insert: {
+          assignment_id: string
+          id?: string
+          reminder_type?: string
+          sent_at?: string
+          sent_by?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          id?: string
+          reminder_type?: string
+          sent_at?: string
+          sent_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_reminders_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "training_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
