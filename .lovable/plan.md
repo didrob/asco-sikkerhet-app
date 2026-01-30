@@ -1,65 +1,66 @@
 
 
-# Generere AI-bilde for Innloggingsside
+# Fiks Dark Mode for Collapsible Navigation
 
-## Bildetema
+## Problem
 
-Basert på appens formål (ASCO Prosedyrehub - digital sikkerhetsoperasjoner), vil jeg generere et profesjonelt bilde som kombinerer:
+I dark mode vises CollapsibleContent (innholdet under seksjoner som "PROSEDYRER", "KURS", etc.) med hvit bakgrunn i stedet for mørk bakgrunn. Dette skaper dårlig kontrast og UX som vist i skjermbildet.
 
-- **Industriell sikkerhet** - HMS, verneutstyr, prosedyrer
-- **Digital teknologi** - moderne, profesjonelt utseende
-- **Samarbeid** - team som jobber sammen med dokumenter/prosedyrer
+## Rotårsak
 
-## Prompt for bildegenerering
+Radix Collapsible-komponenten bruker en intern `Presence`-wrapper som kan forstyrre CSS-arv. Selv om sidebaren har `bg-card`, arver ikke CollapsibleContent denne bakgrunnsfargen korrekt i alle tilfeller.
 
-```
-Professional corporate photography of a modern industrial control room, 
-engineers in safety vests reviewing digital procedures on tablet devices, 
-clean and bright environment, blue and teal color scheme matching ASCO brand, 
-safety equipment visible in background, high-tech monitoring screens, 
-professional corporate atmosphere, soft natural lighting, 
-high quality 4K realistic photography
-```
+## Løsning
 
-## Implementering
+Oppdatere `CollapsibleContent`-komponenten i `src/components/ui/collapsible.tsx` til å eksplisitt sette bakgrunnsfargen til `transparent` eller `inherit` slik at den arver riktig fra forelderen.
 
-### 1. Generere bilde
-Bruke Nano banana (google/gemini-2.5-flash-image) via Lovable AI Gateway
+## Fil-endringer
 
-### 2. Lagre bilde
-Lagre som `public/auth-background.jpg`
+### 1. src/components/ui/collapsible.tsx
 
-### 3. Oppdatere Auth.tsx
-Endre layouten til split-screen design:
+Endre fra enkel re-eksport til en tilpasset komponent med riktig styling:
 
-```
-+---------------------------+---------------------------+
-|                           |                           |
-|     [AI-generert bilde]   |      ASCO Prosedyrehub    |
-|                           |      ────────────────     |
-|     Industriell sikkerhet |                           |
-|     Digital prosedyrer    |      E-post: [________]   |
-|     Profesjonelt team     |      Passord: [________]  |
-|                           |                           |
-|                           |      [Logg inn]           |
-|                           |                           |
-|                           |      Har du ikke tilgang? |
-|                           |      [Be om tilgang]      |
-|                           |                           |
-+---------------------------+---------------------------+
+```typescript
+// FØR
+const CollapsibleContent = CollapsiblePrimitive.CollapsibleContent;
+
+// ETTER
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+const CollapsibleContent = React.forwardRef<
+  React.ElementRef<typeof CollapsiblePrimitive.CollapsibleContent>,
+  React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.CollapsibleContent>
+>(({ className, ...props }, ref) => (
+  <CollapsiblePrimitive.CollapsibleContent
+    ref={ref}
+    className={cn("bg-transparent", className)}
+    {...props}
+  />
+));
+CollapsibleContent.displayName = CollapsiblePrimitive.CollapsibleContent.displayName;
 ```
 
-### 4. Fil-endringer
+### 2. Alternativ: Legg til global CSS-regel i index.css
+
+Hvis løsning 1 ikke fungerer perfekt, kan vi legge til en CSS-regel som sikrer at Collapsible-innhold i sidebaren arver bakgrunnsfargen:
+
+```css
+/* Sikre at collapsible-innhold arver bakgrunnsfarge */
+[data-radix-collapsible-content] {
+  background-color: inherit;
+}
+```
+
+## Teknisk detaljer
 
 | Fil | Endring |
 |-----|---------|
-| `public/auth-background.jpg` | NY - AI-generert bilde |
-| `src/pages/Auth.tsx` | Oppdatert layout med bildepanel |
+| `src/components/ui/collapsible.tsx` | Oppdatert til forwardRef-komponent med eksplisitt `bg-transparent` |
 
 ## Resultat
 
-- Profesjonell innloggingsside med relevant bilde
-- Split-screen design som matcher enterprise-apper
-- Bilde som kommuniserer appens formål (sikkerhet, prosedyrer, industri)
-- Responsivt design (bilde skjules på mobil)
+- Collapsible-navigasjon vil ha transparent bakgrunn
+- Sidebaren vil vise korrekt mørk bakgrunn i dark mode
+- Alle seksjoner (PROSEDYRER, KURS, RAPPORTER, SYSTEM) vil se riktig ut
 
