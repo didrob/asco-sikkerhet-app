@@ -9,9 +9,26 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import Procedures from "./pages/Procedures";
+import ProcedureViewer from "./pages/ProcedureViewer";
+import ManageProcedures from "./pages/ManageProcedures";
+import AdminSites from "./pages/admin/AdminSites";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Wrapper component for protected routes with SiteProvider
+function ProtectedWithSite({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <SiteProvider>
+        {children}
+      </SiteProvider>
+    </ProtectedRoute>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -22,27 +39,22 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <SiteProvider>
-                    <Index />
-                  </SiteProvider>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <SiteProvider>
-                    <Profile />
-                  </SiteProvider>
-                </ProtectedRoute>
-              }
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            
+            {/* Main routes */}
+            <Route path="/" element={<ProtectedWithSite><Index /></ProtectedWithSite>} />
+            <Route path="/profile" element={<ProtectedWithSite><Profile /></ProtectedWithSite>} />
+            
+            {/* Procedure routes */}
+            <Route path="/procedures" element={<ProtectedWithSite><Procedures /></ProtectedWithSite>} />
+            <Route path="/procedures/:id" element={<ProtectedWithSite><ProcedureViewer /></ProtectedWithSite>} />
+            <Route path="/procedures/manage" element={<ProtectedWithSite><ManageProcedures /></ProtectedWithSite>} />
+            
+            {/* Admin routes */}
+            <Route path="/admin/sites" element={<ProtectedWithSite><AdminSites /></ProtectedWithSite>} />
+            <Route path="/admin/users" element={<ProtectedWithSite><AdminUsers /></ProtectedWithSite>} />
+            <Route path="/admin/settings" element={<ProtectedWithSite><AdminSettings /></ProtectedWithSite>} />
+            
+            {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
