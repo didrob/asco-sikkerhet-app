@@ -1,190 +1,176 @@
 
 
-# Utvidet Implementering - Tema-velger + Prosedyrehub Del 2
+# Implementering Del 3 - Klikkbare Prosedyrer + Mobil Navigasjon
 
 ## Oversikt
-Legger til en tema-velger i headeren slik at brukere kan bytte mellom lys, mørk og systeminnstilt modus. Deretter fortsetter vi med prosedyre-editor og gjennomføringsfunksjonalitet.
+Gjør prosedyrekort klikkbare slik at brukere kan åpne og lese prosedyrer, og legger til mobil-navigasjon med hamburger-meny.
 
 ---
 
-## Del 1: Tema-velger i Headeren
+## Del 1: Klikkbare Prosedyrekort
 
-### Ny Komponent
+**Problem**: Prosedyrekortene på `/procedures` er ikke klikkbare. Brukere kan ikke åpne prosedyrene for å lese dem.
 
-**`src/components/ThemeToggle.tsx`**
+**Løsning**: Wrappe `ProcedureCard` med `Link` fra react-router-dom.
 
-En dropdown-knapp som lar brukeren velge mellom tre modi:
-- Sol-ikon (Sun) for lys modus
-- Måne-ikon (Moon) for mørk modus  
-- Laptop-ikon (Laptop) for systeminnstillinger
+### Endringer i `src/components/dashboard/ProcedureList.tsx`
 
-Bruker `useTheme()` fra next-themes for å lese og sette tema.
+```text
+Før:
+<ProcedureCard key={procedure.id} procedure={procedure} />
 
-### Oppdatering av AppHeader
+Etter:
+<Link to={`/procedures/${procedure.id}`}>
+  <ProcedureCard ... className="cursor-pointer hover:shadow-lg" />
+</Link>
+```
 
-Legger til ThemeToggle-komponenten i høyre del av headeren, mellom brukerinfo og logout-knappen.
-
-### Visuelt Design
-
-| Modus | Ikon | Tekst i dropdown |
-|-------|------|------------------|
-| Light | Sun | Lys |
-| Dark | Moon | Mørk |
-| System | Laptop | System |
-
-Knappen viser dynamisk ikon basert på aktivt tema.
+| Element | Endring |
+|---------|---------|
+| Import | Legg til `Link` fra react-router-dom |
+| Wrapper | Pakk inn hver `ProcedureCard` i `Link` |
+| Styling | Legg til `cursor-pointer` og forbedret hover-effekt |
 
 ---
 
-## Del 2: Prosedyre-funksjonalitet
+## Del 2: Mobil Navigasjon
 
-### Testprosedyre i Database
+**Problem**: Sidebar er skjult på mobil (`hidden lg:block`), men det finnes ingen alternativ navigasjon.
 
-Oppretter en "HMS Introduksjon" prosedyre med flere innholdsblokker for testing.
+**Løsning**: Legge til hamburger-meny i AppHeader som åpner et Sheet med navigasjonslenker.
 
-### Progress-hooks
+### Ny Komponent: `src/components/layout/MobileNav.tsx`
 
-**`src/hooks/useProcedureProgress.ts`**
-- `useStartProcedure()` - Starter prosedyre og oppretter progress-rad
-- `useAdvanceBlock()` - Går til neste blokk
-- `useCompleteProcedure()` - Fullfører med signatur
+Egen komponent som inneholder:
+- Sheet-komponent som glir inn fra venstre
+- Samme navigasjonslenker som Sidebar
+- Automatisk lukking ved navigasjon
+- Rollebasert visning (samme logikk som Sidebar)
 
-### Oppdatert ProcedureViewer
+### Endringer i `src/components/layout/AppHeader.tsx`
 
-Legger til funksjonelle knapper:
-- "Start prosedyre" 
-- "Neste steg"
-- "Fullfør prosedyre"
+```text
+Før header-innhold:
+<div className="flex items-center gap-3">
+  <ThemeLogo .../>
+  ...
+</div>
 
-### Signatur-dialog
+Etter:
+<div className="flex items-center gap-3">
+  <MobileNav />  <!-- Ny - vises kun på mobil -->
+  <ThemeLogo .../>
+  ...
+</div>
+```
 
-**`src/components/procedure/SignatureDialog.tsx`**
+### MobileNav Komponent Struktur
 
-Modal med canvas for håndskrevet signatur ved fullføring.
-
----
-
-## Del 3: Prosedyre-editor
-
-### Nye Komponenter
-
-| Fil | Beskrivelse |
-|-----|-------------|
-| `ProcedureEditor.tsx` | Hoved-editor for å opprette/redigere prosedyrer |
-| `ContentBlockEditor.tsx` | Redigerbar innholdsblokk |
-| `BlockToolbar.tsx` | Verktøylinje for å legge til blokker |
-| `TextBlockEditor.tsx` | Rich text editor |
-| `QuizBlockEditor.tsx` | Quiz-spørsmål med alternativer |
-| `CheckpointBlockEditor.tsx` | Bekreftelsespunkt |
-
-### Nye Ruter
-
-| Rute | Komponent |
-|------|-----------|
-| `/procedures/new` | Opprett ny prosedyre |
-| `/procedures/:id/edit` | Rediger eksisterende |
+```text
+MobileNav
+├── Sheet
+│   ├── SheetTrigger (hamburger-ikon, kun synlig på mobil)
+│   └── SheetContent (side="left")
+│       ├── SheetHeader med logo/tittel
+│       └── nav med NavLink-er
+│           ├── Dashboard
+│           ├── Prosedyrer
+│           ├── Min profil
+│           └── (Admin-lenker hvis rolle tillater)
+```
 
 ---
 
-## Implementeringsrekkefølge
+## Filendringer
 
-1. **ThemeToggle** - Tema-velger komponent
-2. **Oppdater AppHeader** - Legg til tema-velgeren
-3. **Testprosedyre** - SQL-migrasjon med testdata
-4. **Progress Hooks** - Start/neste/fullfør mutations
-5. **Oppdater ProcedureViewer** - Koble knapper til hooks
-6. **Signatur-dialog** - Canvas for signering
-7. **Prosedyre-editor** - Full editor med blokker
-8. **Oppdater ManageProcedures** - Koble til editor
+| Fil | Handling | Beskrivelse |
+|-----|----------|-------------|
+| `src/components/dashboard/ProcedureList.tsx` | Oppdater | Klikkbare prosedyrekort med Link |
+| `src/components/layout/MobileNav.tsx` | Ny | Mobil hamburger-meny komponent |
+| `src/components/layout/AppHeader.tsx` | Oppdater | Importere og legge til MobileNav |
 
 ---
 
 ## Tekniske Detaljer
 
-### ThemeToggle Komponent
+### ProcedureList med klikkbare kort
 
 ```typescript
-import { Moon, Sun, Laptop } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { Link } from 'react-router-dom';
+
+// I ProcedureList return:
+{procedures.map(procedure => (
+  <Link 
+    key={procedure.id} 
+    to={`/procedures/${procedure.id}`}
+    className="block"
+  >
+    <ProcedureCard procedure={procedure} />
+  </Link>
+))}
+
+// I ProcedureCard - forbedret hover:
+<Card className="transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
+```
+
+### MobileNav Komponent
+
+```typescript
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useIsAdmin, useCanManageProcedures } from '@/hooks/useUserRoles';
+import { useSiteContext } from '@/contexts/SiteContext';
 
-export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
-
-  const icon = resolvedTheme === 'dark' ? Moon : Sun;
+export function MobileNav() {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  
+  // Automatisk lukking ved navigasjon
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <icon className="h-4 w-4" />
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="lg:hidden">
+          <Menu className="h-5 w-5" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>
-          <Sun className="mr-2 h-4 w-4" /> Lys
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>
-          <Moon className="mr-2 h-4 w-4" /> Mørk
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>
-          <Laptop className="mr-2 h-4 w-4" /> System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-72">
+        {/* Navigasjonslenker */}
+      </SheetContent>
+    </Sheet>
   );
 }
 ```
-
-### Prosedyre Testdata
-
-```sql
-INSERT INTO procedures (site_id, title, description, status, content_blocks)
-VALUES (
-  '00000000-0000-0000-0000-000000000001',
-  'HMS Introduksjon',
-  'Grunnleggende HMS-opplæring for nye ansatte',
-  'published',
-  '[
-    {"id": "1", "type": "text", "content": {"text": "Velkommen til ASCO HMS-opplæring..."}},
-    {"id": "2", "type": "checkpoint", "content": {"label": "Jeg har lest sikkerhetsinstruksene"}},
-    {"id": "3", "type": "quiz", "content": {"question": "Hva gjør du ved brannalarm?", ...}},
-    {"id": "4", "type": "text", "content": {"text": "Gratulerer! Du har fullført."}}
-  ]'
-);
-```
-
----
-
-## Filendringer Oversikt
-
-| Fil | Handling |
-|-----|----------|
-| `src/components/ThemeToggle.tsx` | Ny |
-| `src/components/layout/AppHeader.tsx` | Oppdatert |
-| `src/hooks/useProcedureProgress.ts` | Ny |
-| `src/hooks/useProcedureMutations.ts` | Ny |
-| `src/components/procedure/SignatureDialog.tsx` | Ny |
-| `src/pages/ProcedureEditor.tsx` | Ny |
-| `src/pages/ProcedureViewer.tsx` | Oppdatert |
-| `src/pages/ManageProcedures.tsx` | Oppdatert |
-| `src/App.tsx` | Oppdatert (nye ruter) |
-| SQL-migrasjon | Testprosedyre |
 
 ---
 
 ## Resultat Etter Implementering
 
-- Tema-velger ikon i headeren (mellom brukerinfo og logout)
-- Brukere kan bytte mellom lys, mørk og system-modus
-- Logo bytter automatisk basert på valgt tema
-- Dashboard viser testprosedyren "HMS Introduksjon"
-- Prosedyrer kan startes, gjennomføres steg-for-steg, og fullføres med signatur
-- Admin kan opprette og redigere prosedyrer
+**Desktop**:
+- Prosedyrekort er klikkbare og navigerer til prosedyre-visning
+- Hover-effekt viser at kortene er interaktive
+
+**Mobil**:
+- Hamburger-meny vises øverst til venstre
+- Klikk åpner navigasjonsmeny fra venstre side
+- Samme navigasjonsmuligheter som på desktop
+- Menyen lukkes automatisk ved valg av side
+
+**Alle brukere**:
+- Kan klikke på prosedyrer for å lese dem
+- "Start prosedyre" og "Neste steg" funksjonalitet er allerede på plass i ProcedureViewer
+
+---
+
+## Implementeringsrekkefølge
+
+1. **Klikkbare prosedyrekort** - Oppdater ProcedureList.tsx
+2. **MobileNav komponent** - Ny fil med Sheet-basert meny
+3. **Integrer i AppHeader** - Legg til MobileNav
 
