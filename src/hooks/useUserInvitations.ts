@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// Safe interface - excludes temporary_password for security
 export interface UserInvitation {
   id: string;
   email: string;
   full_name: string | null;
-  temporary_password: string;
   invited_by: string | null;
   invited_at: string;
   expires_at: string;
@@ -18,13 +18,14 @@ export function useUserInvitations() {
   return useQuery({
     queryKey: ['user-invitations'],
     queryFn: async () => {
+      // Query only specific columns to exclude temporary_password for security
       const { data, error } = await supabase
         .from('user_invitations')
-        .select('*')
+        .select('id, email, full_name, invited_by, invited_at, expires_at, activated_at, status, site_id')
         .order('invited_at', { ascending: false });
 
       if (error) throw error;
-      return data as UserInvitation[];
+      return data as unknown as UserInvitation[];
     },
   });
 }
@@ -33,14 +34,15 @@ export function usePendingInvitations() {
   return useQuery({
     queryKey: ['user-invitations', 'pending'],
     queryFn: async () => {
+      // Query only specific columns to exclude temporary_password
       const { data, error } = await supabase
         .from('user_invitations')
-        .select('*')
+        .select('id, email, full_name, invited_by, invited_at, expires_at, activated_at, status, site_id')
         .eq('status', 'pending')
         .order('invited_at', { ascending: false });
 
       if (error) throw error;
-      return data as UserInvitation[];
+      return data as unknown as UserInvitation[];
     },
   });
 }
