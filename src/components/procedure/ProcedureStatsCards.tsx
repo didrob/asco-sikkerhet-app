@@ -1,14 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { FileText, CheckCircle2, FileEdit, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ProcedureStats {
-  total: number;
-  completed: number;
-  inProgress: number;
-  notStarted: number;
-}
+import type { ProcedureStats } from '@/hooks/useProcedures';
 
 interface ProcedureStatsCardsProps {
   stats: ProcedureStats;
@@ -70,36 +64,31 @@ export function ProcedureStatsCards({ stats, isLoading }: ProcedureStatsCardsPro
     );
   }
 
-  const completionRate = stats.total > 0 
-    ? Math.round((stats.completed / stats.total) * 100) 
-    : 0;
-
   return (
     <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
       <StatCard 
-        title="Tilgjengelig" 
+        title="Totalt" 
         value={stats.total} 
         icon={FileText} 
       />
       <StatCard 
-        title="Fullført" 
-        value={stats.completed}
-        subtitle={`${completionRate}%`}
+        title="Publisert" 
+        value={stats.published}
         icon={CheckCircle2}
         iconClassName="text-green-600"
         valueClassName="text-green-600"
       />
       <StatCard 
-        title="Pågående" 
-        value={stats.inProgress}
-        icon={Clock}
-        iconClassName="text-blue-600"
-        valueClassName="text-blue-600"
+        title="Utkast" 
+        value={stats.draft}
+        icon={FileEdit}
+        iconClassName="text-yellow-600"
+        valueClassName="text-yellow-600"
       />
       <StatCard 
-        title="Ikke startet" 
-        value={stats.notStarted}
-        icon={AlertCircle}
+        title="Arkivert" 
+        value={stats.archived}
+        icon={Archive}
         iconClassName="text-muted-foreground"
       />
     </div>

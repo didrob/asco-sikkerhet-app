@@ -4,85 +4,142 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Procedure = Tables<'procedures'>;
-type ProcedureProgress = Tables<'procedure_progress'>;
-type ProcedureCompletion = Tables<'procedure_completions'>;
 
-export interface ProcedureWithProgress extends Procedure {
-  progress: ProcedureProgress | null;
-  completion: ProcedureCompletion | null;
-  status_label: 'not_started' | 'in_progress' | 'completed';
+export interface ProcedureWithMetadata extends Procedure {
+  attachment_count: number;
+  comment_count: number;
+  last_revision?: {
+    version: string;
+    created_at: string;
+    changed_by: string | null;
+  } | null;
 }
 
 export function useProcedures(siteId: string | null) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['procedures', siteId, user?.id],
+    queryKey: ['procedures-list', siteId, user?.id],
     queryFn: async () => {
-      // Fetch published procedures for the site
+      // Fetch procedures for the site (both published and drafts for managers)
       const { data: procedures, error: proceduresError } = await supabase
         .from('procedures')
         .select('*')
         .eq('site_id', siteId!)
-        .eq('status', 'published')
-        .order('title');
+        .order('updated_at', { ascending: false });
 
       if (proceduresError) throw proceduresError;
 
-      // Fetch user's progress for these procedures
-      const { data: progressData, error: progressError } = await supabase
-        .from('procedure_progress')
-        .select('*')
-        .eq('user_id', user!.id)
-        .in('procedure_id', procedures?.map(p => p.id) || []);
+      if (!procedures || procedures.length === 0) {
+        return [];
+      }
 
-      if (progressError) throw progressError;
+      const procedureIds = procedures.map(p => p.id);
 
-      // Fetch user's completions for these procedures
-      const { data: completionsData, error: completionsError } = await supabase
-        .from('procedure_completions')
-        .select('*')
-        .eq('user_id', user!.id)
-        .in('procedure_id', procedures?.map(p => p.id) || []);
+      // Fetch attachment counts
+      const { data: attachmentCounts, error: attachmentsError } = await supabase
+        .from('procedure_attachments')
+        .select('procedure_id')
+        .in('procedure_id', procedureIds);
 
-      if (completionsError) throw completionsError;
+      if (attachmentsError) throw attachmentsError;
 
-      // Map progress and completions to procedures
-      const progressMap = new Map(progressData?.map(p => [p.procedure_id, p]) || []);
-      const completionMap = new Map(completionsData?.map(c => [c.procedure_id, c]) || []);
+      // Fetch comment counts (only open comments)
+      const { data: commentCounts, error: commentsError } = await supabase
+        .from('procedure_comments')
+        .select('procedure_id')
+        .in('procedure_id', procedureIds)
+        .is('parent_id', null); // Only count top-level comments
 
-      return (procedures || []).map(procedure => {
-        const progress = progressMap.get(procedure.id) || null;
-        const completion = completionMap.get(procedure.id) || null;
-        
-        let status_label: 'not_started' | 'in_progress' | 'completed' = 'not_started';
-        if (completion) {
-          status_label = 'completed';
-        } else if (progress) {
-          status_label = 'in_progress';
-        }
+      if (commentsError) throw commentsError;
 
-        return {
-          ...procedure,
-          progress,
-          completion,
-          status_label,
-        } as ProcedureWithProgress;
+      // Fetch latest revisions
+      const { data: revisions, error: revisionsError } = await supabase
+        .from('procedure_revisions')
+        .select('procedure_id, version, created_at, changed_by')
+        .in('procedure_id', procedureIds)
+        .order('created_at', { ascending: false });
+
+      if (revisionsError) throw revisionsError;
+
+      // Create count maps
+      const attachmentCountMap = new Map<string, number>();
+      (attachmentCounts || []).forEach(a => {
+        const current = attachmentCountMap.get(a.procedure_id) || 0;
+        attachmentCountMap.set(a.procedure_id, current + 1);
       });
+
+      const commentCountMap = new Map<string, number>();
+      (commentCounts || []).forEach(c => {
+        const current = commentCountMap.get(c.procedure_id) || 0;
+        commentCountMap.set(c.procedure_id, current + 1);
+      });
+
+      // Get only the latest revision per procedure
+      const latestRevisionMap = new Map<string, { version: string; created_at: string; changed_by: string | null }>();
+      (revisions || []).forEach(r => {
+        if (!latestRevisionMap.has(r.procedure_id)) {
+          latestRevisionMap.set(r.procedure_id, {
+            version: r.version,
+            created_at: r.created_at || '',
+            changed_by: r.changed_by,
+          });
+        }
+      });
+
+      return procedures.map(procedure => ({
+        ...procedure,
+        attachment_count: attachmentCountMap.get(procedure.id) || 0,
+        comment_count: commentCountMap.get(procedure.id) || 0,
+        last_revision: latestRevisionMap.get(procedure.id) || null,
+      })) as ProcedureWithMetadata[];
     },
     enabled: !!user && !!siteId,
   });
 }
 
+export interface ProcedureStats {
+  total: number;
+  published: number;
+  draft: number;
+  archived: number;
+}
+
 export function useProcedureStats(siteId: string | null) {
   const { data: procedures, isLoading } = useProcedures(siteId);
 
-  const stats = {
+  const stats: ProcedureStats = {
     total: procedures?.length || 0,
-    completed: procedures?.filter(p => p.status_label === 'completed').length || 0,
-    inProgress: procedures?.filter(p => p.status_label === 'in_progress').length || 0,
-    notStarted: procedures?.filter(p => p.status_label === 'not_started').length || 0,
+    published: procedures?.filter(p => p.status === 'published').length || 0,
+    draft: procedures?.filter(p => p.status === 'draft').length || 0,
+    archived: procedures?.filter(p => p.status === 'archived').length || 0,
   };
 
   return { stats, isLoading };
+}
+
+// Get unique categories from procedures
+export function useProcedureCategories(siteId: string | null) {
+  const { data: procedures } = useProcedures(siteId);
+  
+  const categories = [...new Set(
+    (procedures || [])
+      .map(p => p.category)
+      .filter((c): c is string => !!c)
+  )].sort();
+
+  return categories;
+}
+
+// Get unique tags from procedures
+export function useProcedureTags(siteId: string | null) {
+  const { data: procedures } = useProcedures(siteId);
+  
+  const tags = [...new Set(
+    (procedures || [])
+      .flatMap(p => p.tags || [])
+      .filter((t): t is string => !!t)
+  )].sort();
+
+  return tags;
 }
