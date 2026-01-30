@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useAllUsers, useAssignUserToSite, useRemoveUserFromSite, useAssignRole, useRemoveRole } from '@/hooks/useAdminUsers';
+import { useAllUsers, useAssignUserToSite, useRemoveUserFromSite } from '@/hooks/useAdminUsers';
 import { useAllSites } from '@/hooks/useAdminSites';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import {
@@ -29,23 +30,9 @@ import {
   Building2,
   Plus,
   X,
-  User
+  User,
+  ExternalLink
 } from 'lucide-react';
-import type { Enums } from '@/integrations/supabase/types';
-
-const ROLE_LABELS: Record<Enums<'app_role'>, string> = {
-  admin: 'Administrator',
-  supervisor: 'Supervisor',
-  operator: 'Operatør',
-  viewer: 'Leser',
-};
-
-const ROLE_COLORS: Record<Enums<'app_role'>, string> = {
-  admin: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  supervisor: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  operator: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  viewer: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-};
 
 function UsersSkeleton() {
   return (
@@ -73,14 +60,11 @@ export default function AdminUsers() {
   const { data: sites } = useAllSites();
   const assignToSite = useAssignUserToSite();
   const removeFromSite = useRemoveUserFromSite();
-  const assignRole = useAssignRole();
-  const removeRole = useRemoveRole();
   const { toast } = useToast();
 
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const [dialogType, setDialogType] = useState<'site' | 'role' | null>(null);
+  const [showSiteDialog, setShowSiteDialog] = useState(false);
   const [selectedSite, setSelectedSite] = useState<string>('');
-  const [selectedRole, setSelectedRole] = useState<Enums<'app_role'>>('viewer');
 
   const isLoading = adminLoading || usersLoading;
 
@@ -105,7 +89,7 @@ export default function AdminUsers() {
     try {
       await assignToSite.mutateAsync({ userId: selectedUser, siteId: selectedSite });
       toast({ title: 'Bruker tildelt site' });
-      setDialogType(null);
+      setShowSiteDialog(false);
       setSelectedUser(null);
       setSelectedSite('');
     } catch (error) {
@@ -122,51 +106,38 @@ export default function AdminUsers() {
     }
   };
 
-  const handleAssignRole = async () => {
-    if (!selectedUser || !selectedSite || !selectedRole) return;
-    
-    try {
-      await assignRole.mutateAsync({ 
-        userId: selectedUser, 
-        siteId: selectedSite, 
-        role: selectedRole 
-      });
-      toast({ title: 'Rolle tildelt' });
-      setDialogType(null);
-      setSelectedUser(null);
-      setSelectedSite('');
-      setSelectedRole('viewer');
-    } catch (error) {
-      toast({ title: 'Feil', description: 'Kunne ikke tildele rolle.', variant: 'destructive' });
-    }
-  };
-
-  const handleRemoveRole = async (roleId: string) => {
-    try {
-      await removeRole.mutateAsync(roleId);
-      toast({ title: 'Rolle fjernet' });
-    } catch (error) {
-      toast({ title: 'Feil', description: 'Kunne ikke fjerne rolle.', variant: 'destructive' });
-    }
-  };
-
   const currentUser = users?.find(u => u.id === selectedUser);
   const availableSitesForUser = sites?.filter(
     site => !currentUser?.site_assignments.some(a => a.site_id === site.id)
   );
 
+  // Count roles per user
+  const getRoleCount = (userId: string) => {
+    const user = users?.find(u => u.id === userId);
+    return user?.roles.length || 0;
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
-            <Users className="h-6 w-6" />
-            Brukere
-          </h1>
-          <p className="text-muted-foreground">
-            Administrer brukere, sites og roller
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+              <Users className="h-6 w-6" />
+              Brukere
+            </h1>
+            <p className="text-muted-foreground">
+              Administrer brukere og site-tildelinger
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/admin/roles" className="gap-2">
+              <Shield className="h-4 w-4" />
+              Administrer roller
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </Button>
         </div>
 
         {/* Users List */}
@@ -200,6 +171,11 @@ export default function AdminUsers() {
                           {user.profile?.job_title || 'Ingen stillingstittel'}
                           {user.profile?.department && ` • ${user.profile.department}`}
                         </p>
+                        {getRoleCount(user.id) > 0 && (
+                          <Badge variant="secondary" className="mt-1">
+                            {getRoleCount(user.id)} {getRoleCount(user.id) === 1 ? 'rolle' : 'roller'}
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
@@ -233,49 +209,7 @@ export default function AdminUsers() {
                           variant="ghost"
                           onClick={() => {
                             setSelectedUser(user.id);
-                            setDialogType('site');
-                          }}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Roles */}
-                    <div className="flex-1">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Roller
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {user.roles.length === 0 ? (
-                          <span className="text-sm text-muted-foreground">Ingen roller</span>
-                        ) : (
-                          user.roles.map(role => {
-                            const site = sites?.find(s => s.id === role.site_id);
-                            return (
-                              <Badge 
-                                key={role.id} 
-                                className={`gap-1 ${ROLE_COLORS[role.role]}`}
-                              >
-                                <Shield className="h-3 w-3" />
-                                {ROLE_LABELS[role.role]}
-                                {site && <span className="opacity-70">@ {site.name}</span>}
-                                <button
-                                  onClick={() => handleRemoveRole(role.id)}
-                                  className="ml-1 hover:opacity-70"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </Badge>
-                            );
-                          })
-                        )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedUser(user.id);
-                            setDialogType('role');
+                            setShowSiteDialog(true);
                           }}
                         >
                           <Plus className="h-3 w-3" />
@@ -290,7 +224,7 @@ export default function AdminUsers() {
         )}
 
         {/* Assign Site Dialog */}
-        <Dialog open={dialogType === 'site'} onOpenChange={() => setDialogType(null)}>
+        <Dialog open={showSiteDialog} onOpenChange={setShowSiteDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Tildel site</DialogTitle>
@@ -313,62 +247,11 @@ export default function AdminUsers() {
               </Select>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogType(null)}>
+              <Button variant="outline" onClick={() => setShowSiteDialog(false)}>
                 Avbryt
               </Button>
               <Button onClick={handleAssignSite} disabled={!selectedSite || assignToSite.isPending}>
                 Tildel site
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Assign Role Dialog */}
-        <Dialog open={dialogType === 'role'} onOpenChange={() => setDialogType(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Tildel rolle</DialogTitle>
-              <DialogDescription>
-                Velg en rolle og site for brukeren
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Site</label>
-                <Select value={selectedSite} onValueChange={setSelectedSite}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Velg site" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sites?.map(site => (
-                      <SelectItem key={site.id} value={site.id}>
-                        {site.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Rolle</label>
-                <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as Enums<'app_role'>)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Velg rolle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Administrator</SelectItem>
-                    <SelectItem value="supervisor">Supervisor</SelectItem>
-                    <SelectItem value="operator">Operatør</SelectItem>
-                    <SelectItem value="viewer">Leser</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogType(null)}>
-                Avbryt
-              </Button>
-              <Button onClick={handleAssignRole} disabled={!selectedSite || assignRole.isPending}>
-                Tildel rolle
               </Button>
             </DialogFooter>
           </DialogContent>
