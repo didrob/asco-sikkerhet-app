@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_access: {
+        Row: {
+          enabled: boolean | null
+          features: string[] | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean | null
+          features?: string[] | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean | null
+          features?: string[] | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -116,6 +143,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "procedure_progress_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procedure_views: {
+        Row: {
+          completed_read: boolean | null
+          duration_seconds: number | null
+          id: string
+          procedure_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          completed_read?: boolean | null
+          duration_seconds?: number | null
+          id?: string
+          procedure_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          completed_read?: boolean | null
+          duration_seconds?: number | null
+          id?: string
+          procedure_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_views_procedure_id_fkey"
             columns: ["procedure_id"]
             isOneToOne: false
             referencedRelation: "procedures"

@@ -12,7 +12,10 @@ import {
   Crown,
   BookOpen,
   Users,
-  History
+  History,
+  Cog,
+  Activity,
+  Bot
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -55,7 +58,7 @@ export function MobileNav() {
           <span className="sr-only">Åpne meny</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 p-0">
+      <SheetContent side="left" className="w-72 overflow-y-auto p-0">
         <SheetHeader className="border-b border-border p-4">
           <SheetTitle className="flex items-center gap-2">
             <ThemeLogo className="h-8 w-auto" />
@@ -105,70 +108,58 @@ export function MobileNav() {
             </NavLink>
           </div>
 
-          {/* Admin/Manager section */}
-          {(isAdmin || canManage) && (
+          {/* Administrasjon section */}
+          {canManage && (
             <div className="mt-6 space-y-1">
               <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Administrasjon
               </p>
 
-              {canManage && (
-                <>
-                  <NavLink to="/procedures/manage" className={navLinkClasses}>
-                    <Shield className="h-4 w-4" />
-                    Prosedyrer
-                  </NavLink>
+              <NavLink to="/procedures/manage" className={navLinkClasses}>
+                <Shield className="h-4 w-4" />
+                Prosedyrer
+              </NavLink>
 
-                  <NavLink to="/training/manage" className={navLinkClasses}>
-                    <BookOpen className="h-4 w-4" />
-                    Kurs
-                  </NavLink>
+              <NavLink to="/training/manage" className={navLinkClasses}>
+                <BookOpen className="h-4 w-4" />
+                Kurs
+              </NavLink>
 
-                  <NavLink to="/training/groups" className={navLinkClasses}>
-                    <Users className="h-4 w-4" />
-                    Grupper
-                  </NavLink>
+              <NavLink to="/training/groups" className={navLinkClasses}>
+                <Users className="h-4 w-4" />
+                Grupper
+              </NavLink>
 
-                  <NavLink to="/training/overview" className={navLinkClasses}>
-                    <BarChart3 className="h-4 w-4" />
-                    Opplæringsoversikt
-                  </NavLink>
+              <NavLink to="/training/overview" className={navLinkClasses}>
+                <BarChart3 className="h-4 w-4" />
+                Opplæringsoversikt
+              </NavLink>
 
-                  <NavLink to="/admin/reports" className={navLinkClasses}>
-                    <BarChart3 className="h-4 w-4" />
-                    Rapporter
-                  </NavLink>
-                </>
-              )}
-
-              {isAdmin && (
-                <>
-                  <NavLink to="/admin/sites" className={navLinkClasses}>
-                    <Building2 className="h-4 w-4" />
-                    Sites
-                  </NavLink>
-                  
-                  <NavLink to="/admin/users" className={navLinkClasses}>
-                    <User className="h-4 w-4" />
-                    Brukere
-                  </NavLink>
-
-                  <NavLink to="/admin/settings" className={navLinkClasses}>
-                    <Settings className="h-4 w-4" />
-                    Innstillinger
-                  </NavLink>
-                </>
-              )}
+              <NavLink to="/admin/reports" className={navLinkClasses}>
+                <BarChart3 className="h-4 w-4" />
+                Rapporter
+              </NavLink>
             </div>
           )}
 
-          {/* Governance section - Admin only */}
+          {/* System section - Admin only */}
           {isAdmin && (
             <div className="mt-6 space-y-1">
               <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Governance
+                <Cog className="mr-1 inline h-3 w-3" />
+                System
               </p>
               
+              <NavLink to="/admin/users" className={navLinkClasses}>
+                <User className="h-4 w-4" />
+                Brukere
+              </NavLink>
+
+              <NavLink to="/admin/sites" className={navLinkClasses}>
+                <Building2 className="h-4 w-4" />
+                Lokasjoner
+              </NavLink>
+
               <NavLink to="/admin/roles" className={navLinkClasses}>
                 <Crown className="h-4 w-4" />
                 Roller
@@ -176,7 +167,22 @@ export function MobileNav() {
 
               <NavLink to="/admin/audit" className={navLinkClasses}>
                 <FileText className="h-4 w-4" />
-                Aktivitetslogg
+                Endringslogg
+              </NavLink>
+
+              <NavLink to="/system/stats" className={navLinkClasses}>
+                <Activity className="h-4 w-4" />
+                Brukerstatistikk
+              </NavLink>
+
+              <NavLink to="/system/ai" className={navLinkClasses}>
+                <Bot className="h-4 w-4" />
+                AI-tilgang
+              </NavLink>
+
+              <NavLink to="/admin/settings" className={navLinkClasses}>
+                <Settings className="h-4 w-4" />
+                Innstillinger
               </NavLink>
             </div>
           )}

@@ -19,6 +19,7 @@ export interface RoleAccess {
   canManageSites: boolean;
   canAccessSettings: boolean;
   canManageRoles: boolean;
+  canAccessSystem: boolean; // For System admin section (admin only)
 }
 
 export function useRoleAccess(siteId?: string | null): RoleAccess {
@@ -68,5 +69,7 @@ export function useRoleAccess(siteId?: string | null): RoleAccess {
     canManageSites: !!isAdmin,
     canAccessSettings: !!isAdmin,
     canManageRoles: !!isAdmin,
+    // Only admin can access System section
+    canAccessSystem: !!isAdmin,
   };
 }

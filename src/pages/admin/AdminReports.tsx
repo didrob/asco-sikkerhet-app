@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useIsAdmin, useCanManageProcedures } from '@/hooks/useUserRoles';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { useCompletionStats, useUserCompletions, useCompletionTimeline, useTotalStats } from '@/hooks/useReportData';
-import { Shield, BarChart3, Users, CheckCircle, TrendingUp, Download } from 'lucide-react';
+import { Shield, BarChart3, Users, CheckCircle, TrendingUp, Download, Eye, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Table, 
@@ -82,6 +82,8 @@ export default function AdminReports() {
       exportToCSV(
         completionStats.map(s => ({
           prosedyre: s.procedureTitle,
+          visninger: s.totalViews,
+          unike_lesere: s.uniqueViewers,
           fullfort: s.completedCount,
           totalt_brukere: s.totalUsers,
           fullforingsrate: `${s.completionRate}%`,
@@ -291,6 +293,69 @@ export default function AdminReports() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Procedure Stats with Views */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Prosedyre-statistikk
+            </CardTitle>
+            <CardDescription>Visninger og fullføringer per prosedyre</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {statsLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : completionStats?.length ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Prosedyre</TableHead>
+                    <TableHead className="text-right">Visninger</TableHead>
+                    <TableHead className="text-right">Unike lesere</TableHead>
+                    <TableHead className="text-right">Fullført</TableHead>
+                    <TableHead className="text-right">Rate</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {completionStats.map(stat => {
+                    const readToCompletionRate = stat.uniqueViewers > 0 
+                      ? Math.round((stat.completedCount / stat.uniqueViewers) * 100)
+                      : 0;
+                    const hasLowConversion = stat.uniqueViewers >= 5 && readToCompletionRate < 50;
+                    
+                    return (
+                      <TableRow key={stat.procedureId}>
+                        <TableCell className="font-medium">
+                          {stat.procedureTitle}
+                          {hasLowConversion && (
+                            <AlertTriangle className="ml-2 inline h-4 w-4 text-yellow-500" />
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">{stat.totalViews}</TableCell>
+                        <TableCell className="text-right">{stat.uniqueViewers}</TableCell>
+                        <TableCell className="text-right">{stat.completedCount}</TableCell>
+                        <TableCell className="text-right">{stat.completionRate}%</TableCell>
+                        <TableCell>
+                          <Progress value={stat.completionRate} className="h-2 w-16" />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                Ingen prosedyrer på denne siten
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* User Completion Table */}
         <Card>
