@@ -1,351 +1,119 @@
-
-
 # Refaktorering av Prosedyremodul med Metadata, Eksport og Vedlegg
 
-## Problemanalyse
+## ✅ Status: Implementert
 
-Nåværende prosedyreeditor blander sammen prosedyreinnhold og opplæringsinnhold. Ifølge memory-notatet skal prosedyrer være **referansedokumenter** som krever "lest og forstått"-signatur, mens **opplæringsmoduler** skal tilby aktiv læring med quiz og praktiske oppgaver.
-
-### Hva som må endres
-
-| Problem | Løsning |
-|---------|---------|
-| Quiz/checkpoint ligger i prosedyrer | Flytte til kurseditor, beholde kun tekst/bilde/video i prosedyrer |
-| Mangler metadata | Legge til kategori, versjon, godkjent av, revisjonshistorikk |
-| Ingen eksport | PDF og Word-eksport med profesjonell formatering |
-| Ingen vedlegg | Støtte for å laste opp og koble filer til prosedyrer |
-| Ingen samarbeid | Kommentarer, endringsforslag, versjonshistorikk (Google Docs-inspirert) |
+Denne planen er implementert. Her er en oversikt over hva som ble gjort:
 
 ---
 
-## Del 1: Rydde opp i Prosedyreeditor
+## ✅ Del 1: Rydde opp i Prosedyreeditor
 
-### Fjerne interaktive blokktyper fra prosedyrer
-
-**Før** (ProcedureEditor.tsx linje 42-48):
-```
-BLOCK_TYPES = [
-  { type: 'text', label: 'Tekst' },
-  { type: 'checkpoint', label: 'Bekreftelse' },   ← FJERNES
-  { type: 'quiz', label: 'Quiz' },                ← FJERNES
-  { type: 'image', label: 'Bilde' },
-  { type: 'video', label: 'Video' },
-]
-```
-
-**Etter**:
-```
-BLOCK_TYPES = [
-  { type: 'text', label: 'Tekst' },
-  { type: 'heading', label: 'Overskrift' },       ← NY
-  { type: 'image', label: 'Bilde' },
-  { type: 'video', label: 'Video' },
-  { type: 'warning', label: 'Advarsel/viktig' },  ← NY
-  { type: 'list', label: 'Punktliste' },          ← NY
-]
-```
-
-Prosedyrer blir rene referansedokumenter - quiz og checkpoint flyttes til kurseditor.
+**Gjennomført:** Quiz og checkpoint blokktyper er fjernet fra prosedyreeditor. Nye blokktyper lagt til:
+- Tekst
+- Overskrift
+- Bilde
+- Video
+- Advarsel/viktig
+- Punktliste
 
 ---
 
-## Del 2: Utvidet Metadata
+## ✅ Del 2: Utvidet Metadata
 
-### Nye felt i prosedyrer-tabellen
+**Database-kolonner lagt til i `procedures`-tabellen:**
+- `category` (TEXT)
+- `version` (TEXT, default '1.0')
+- `approved_by` (UUID)
+- `approved_at` (TIMESTAMPTZ)
+- `review_date` (DATE)
+- `document_number` (TEXT)
+- `tags` (TEXT[])
+- `author_id` (UUID)
 
-| Felt | Type | Beskrivelse |
-|------|------|-------------|
-| `category` | TEXT | Kategori (f.eks. "HMS", "Brann", "Drift") |
-| `version` | TEXT | Versjonsnummer (f.eks. "1.0", "2.1") |
-| `approved_by` | UUID | Hvem som godkjente prosedyren |
-| `approved_at` | TIMESTAMPTZ | Når den ble godkjent |
-| `review_date` | DATE | Dato for neste revisjon |
-| `document_number` | TEXT | Internt dokumentnummer |
-| `tags` | TEXT[] | Søkbare tagger |
-| `author_id` | UUID | Forfatter (kan være annen enn created_by) |
-
-### UI i Prosedyreeditor
-
-```text
-GRUNNLEGGENDE INFORMASJON
-+-----------------------------------------------------------+
-| Tittel *            [HMS Introduksjon_____________]       |
-| Beskrivelse         [Kort beskrivelse___________]         |
-+-----------------------------------------------------------+
-
-METADATA
-+-----------------------------------------------------------+
-| Kategori       [HMS ▼]           Versjon    [1.0]         |
-| Dok.nummer     [HMS-001]         Revisjonsdato [📅]       |
-| Godkjent av    [Velg bruker ▼]   Tagger     [+Legg til]   |
-+-----------------------------------------------------------+
-
-INNHOLD
-[Tekst] [Overskrift] [Bilde] [Video] [Advarsel] [Liste]
-...
-```
+**UI-komponent:** `MetadataSection.tsx` med alle felt inkludert kategori-velger, versjon, dokumentnummer, revisjonsdato og tagger.
 
 ---
 
-## Del 3: Vedlegg
+## ✅ Del 3: Vedlegg
 
-### Ny database-tabell
+**Ny tabell:** `procedure_attachments` med RLS-policies
 
-```sql
-CREATE TABLE public.procedure_attachments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  procedure_id UUID REFERENCES procedures(id) ON DELETE CASCADE,
-  file_name TEXT NOT NULL,
-  file_path TEXT NOT NULL,           -- Storage path
-  file_size INTEGER,
-  file_type TEXT,                    -- MIME type
-  description TEXT,
-  uploaded_by UUID,
-  uploaded_at TIMESTAMPTZ DEFAULT now()
-);
-```
+**Storage bucket:** `procedure-attachments` (50MB maks)
 
-### UI: Vedlegg-seksjon i editor
+**Hooks:** `useProcedureAttachments.ts` med upload/delete/list
 
-```text
-VEDLEGG
-+-----------------------------------------------------------+
-| [📎 Last opp vedlegg]  [📂 Koble fra eksisterende]        |
-+-----------------------------------------------------------+
-| 📄 Brannøvelse-skjema.pdf     (245 KB)    [👁] [🗑]       |
-| 📄 HMS-sjekkliste.xlsx        (128 KB)    [👁] [🗑]       |
-| 📄 Instruksjonsvideo.mp4      (15 MB)     [👁] [🗑]       |
-+-----------------------------------------------------------+
-```
-
-### Tillatte filtyper
-- PDF, Word, Excel, PowerPoint
-- Bilder (jpg, png, gif)
-- Video (mp4, webm)
-- Maks 50MB per fil
+**UI-komponent:** `AttachmentsSection.tsx` med filopplasting og tabell
 
 ---
 
-## Del 4: PDF/Word Eksport
+## ✅ Del 4: PDF/Word Eksport
 
-### Eksport-knapper i editor og viewer
+**Biblioteker installert:**
+- `jspdf` for PDF-generering
+- `docx` for Word-generering
+- `file-saver` for nedlasting
 
-```text
-[Forhåndsvis] [Lagre] [⬇️ Eksporter ▼]
-                            └─ PDF
-                            └─ Word (.docx)
-```
+**Lib-filer:**
+- `src/lib/pdf-export.ts` - Profesjonell PDF med header, metadata, innhold
+- `src/lib/word-export.ts` - Word-dokument med samme struktur
 
-### Profesjonell PDF-layout
-
-```text
-+-------------------------------------------------------+
-|  ASCO                                         [LOGO]  |
-|                                                       |
-|  HMS-PROSEDYRE                                        |
-|  ═══════════════════════════════════════════════      |
-|                                                       |
-|  HMS Introduksjon                                     |
-|  Versjon 1.0 | Dok.nr: HMS-001                       |
-|                                                       |
-|  Godkjent av: Ola Nordmann                           |
-|  Godkjent dato: 28. januar 2026                      |
-|  Neste revisjon: 28. januar 2027                     |
-|                                                       |
-|  ─────────────────────────────────────────────────   |
-|                                                       |
-|  INNHOLD                                              |
-|                                                       |
-|  1. Formål                                           |
-|  2. Ansvar                                           |
-|  3. Fremgangsmåte                                    |
-|  ...                                                  |
-|                                                       |
-|  [Bilder integrert i dokumentet]                     |
-|                                                       |
-|  VEDLEGG                                             |
-|  - Brannøvelse-skjema.pdf                           |
-|  - HMS-sjekkliste.xlsx                              |
-|                                                       |
-|  ─────────────────────────────────────────────────   |
-|  Side 1 av 3                                          |
-+-------------------------------------------------------+
-```
-
-### Teknisk implementering
-
-Bruker biblioteker som:
-- **jsPDF** + **html2canvas** for PDF
-- **docx** (npm) for Word-generering
-
-Eksport skjer client-side - ingen server nødvendig.
+**UI-komponent:** `ExportMenu.tsx` med dropdown for PDF/Word valg
 
 ---
 
-## Del 5: Samarbeid (Google Docs-inspirert)
+## ✅ Del 5: Samarbeid
 
-### Fase 1: Kommentarer og endringsforslag
+**Nye tabeller:**
+- `procedure_comments` - Kommentarer med tråder og status
+- `procedure_revisions` - Versjonshistorikk med snapshots
 
-```sql
-CREATE TABLE public.procedure_comments (
-  id UUID PRIMARY KEY,
-  procedure_id UUID REFERENCES procedures(id),
-  user_id UUID,
-  content TEXT NOT NULL,
-  block_id TEXT,                    -- Hvilken blokk kommentaren gjelder
-  parent_id UUID,                   -- For svar på kommentarer
-  status TEXT DEFAULT 'open',       -- 'open', 'resolved'
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+**Hooks:**
+- `useProcedureComments.ts` - CRUD for kommentarer med svar
+- `useProcedureRevisions.ts` - Historikk og gjenoppretting
 
-CREATE TABLE public.procedure_revisions (
-  id UUID PRIMARY KEY,
-  procedure_id UUID REFERENCES procedures(id),
-  version TEXT NOT NULL,
-  content_snapshot JSONB,           -- Hele prosedyren som snapshot
-  changed_by UUID,
-  change_summary TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
-
-### UI: Kommentar-panel
-
-```text
-+-----------------------------------------------------------+
-| [Redigering]  [Kommentarer (3)]  [Historikk]              |
-+-----------------------------------------------------------+
-
-KOMMENTARER
-+-----------------------------------------------------------+
-| 💬 Kari Hansen - 27. jan                                  |
-| "Kan vi legge til mer info om brannslukker?"             |
-| [Svar] [Løst ✓]                                          |
-|                                                           |
-|   └─ Ola Nordmann - 28. jan                              |
-|      "Lagt til i avsnitt 3"                              |
-+-----------------------------------------------------------+
-```
-
-### UI: Versjonshistorikk
-
-```text
-REVISJONSHISTORIKK
-+-----------------------------------------------------------+
-| v1.2  | 28. jan 2026 | Ola N.   | Oppdatert sikkerhet    |
-| v1.1  | 15. jan 2026 | Kari H.  | Lagt til brannøvelse   |
-| v1.0  | 01. jan 2026 | Per S.   | Første versjon         |
-+-----------------------------------------------------------+
-| [Sammenlign versjoner] [Gjenopprett v1.1]                 |
-+-----------------------------------------------------------+
-```
+**UI-komponenter:**
+- `CommentsPanel.tsx` - Kommentarfelt, tråder, løst/gjenåpne
+- `RevisionHistory.tsx` - Historikktabell med gjenopprett-funksjon
 
 ---
 
-## Del 6: Teknisk Implementering
+## ✅ Del 6: Oppdatert ProcedureEditor
+
+**Ny tabs-struktur:**
+1. **Innhold** - Tittel, beskrivelse, innholdsblokker
+2. **Metadata** - Kategori, versjon, dokumentnummer, tagger
+3. **Vedlegg** - Filopplasting og liste
+4. **Kommentarer** - Samarbeid og diskusjon
+5. **Historikk** - Revisjonshistorikk
+
+---
+
+## Filstruktur
 
 ### Nye filer
-
 | Fil | Beskrivelse |
 |-----|-------------|
-| **Database** | |
-| `supabase/migrations/xxx_procedure_enhancements.sql` | Metadata, vedlegg, kommentarer |
-| **Hooks** | |
 | `src/hooks/useProcedureAttachments.ts` | CRUD for vedlegg |
 | `src/hooks/useProcedureComments.ts` | CRUD for kommentarer |
 | `src/hooks/useProcedureRevisions.ts` | Versjonshistorikk |
-| **Komponenter** | |
 | `src/components/procedure/MetadataSection.tsx` | Metadata-skjema |
-| `src/components/procedure/AttachmentsSection.tsx` | Vedlegg-opplasting |
+| `src/components/procedure/AttachmentsSection.tsx` | Vedlegg-seksjon |
 | `src/components/procedure/CommentsPanel.tsx` | Kommentar-panel |
-| `src/components/procedure/RevisionHistory.tsx` | Historikk-visning |
+| `src/components/procedure/RevisionHistory.tsx` | Historikk-tabell |
 | `src/components/procedure/ExportMenu.tsx` | Eksport-dropdown |
-| **Lib** | |
 | `src/lib/pdf-export.ts` | PDF-generering |
 | `src/lib/word-export.ts` | Word-generering |
 
 ### Oppdaterte filer
-
 | Fil | Endring |
 |-----|---------|
-| `ProcedureEditor.tsx` | Nye blokktyper, metadata, vedlegg, eksport |
-| `ProcedureViewer.tsx` | Fjerne quiz/checkpoint-håndtering, legge til vedlegg |
-| `useProcedureMutations.ts` | Støtte for nye felt |
-| `storage.ts` | Vedlegg-opplasting |
+| `ProcedureEditor.tsx` | Ny tabs-struktur, nye blokktyper, eksport |
+| `useProcedureMutations.ts` | Støtte for metadata-felt |
 
 ---
 
-## Del 7: Oppdatert Prosedyreeditor-layout
+## Neste steg (valgfritt)
 
-```text
-+-----------------------------------------------------------+
-| ← Tilbake                                                  |
-| Rediger prosedyre                     [Eksporter ▼] [Lagre]|
-| Site: Hovedkontoret                                        |
-+-----------------------------------------------------------+
-
-TABS: [Innhold] [Metadata] [Vedlegg] [Kommentarer] [Historikk]
-
-=== INNHOLD-TAB ===
-
-Tittel *  [HMS Introduksjon_____________________]
-Beskrivelse [Kort beskrivelse av prosedyren____]
-
-INNHOLDSBLOKKER
-+-----------------------------------------------------------+
-| [+ Tekst] [+ Overskrift] [+ Bilde] [+ Video] [+ Advarsel] |
-+-----------------------------------------------------------+
-
-[Blokk 1: Tekst] ↕️ 🗑
-| Formålet med denne prosedyren er å...                     |
-
-[Blokk 2: Advarsel] ↕️ 🗑
-| ⚠️ VIKTIG: Bruk alltid verneutstyr...                     |
-
-[Blokk 3: Bilde] ↕️ 🗑
-| [Sikkerhetsutstyr.jpg]                                    |
-
-=== METADATA-TAB ===
-
-+-----------------------------------------------------------+
-| Kategori       [HMS ▼]           Versjon      [1.0]       |
-| Dok.nummer     [HMS-001]         Status       [Utkast ▼]  |
-| Revisjonsdato  [28.01.2027]      Godkjent av  [Velg...]   |
-| Tagger         [sikkerhet] [brann] [+ Ny]                 |
-+-----------------------------------------------------------+
-
-=== VEDLEGG-TAB ===
-
-[📎 Last opp vedlegg]
-
-+-----------------------------------------------------------+
-| Fil                    | Størrelse | Lastet opp | Handling |
-|------------------------|-----------|------------|----------|
-| Brannøvelse.pdf        | 245 KB    | 28. jan    | [👁] [🗑]|
-| HMS-sjekkliste.xlsx    | 128 KB    | 27. jan    | [👁] [🗑]|
-+-----------------------------------------------------------+
-```
-
----
-
-## Del 8: Implementeringsrekkefølge
-
-1. **Database-migrering** - Nye kolonner og tabeller
-2. **Rydde blokktyper** - Fjerne quiz/checkpoint fra prosedyrer
-3. **Metadata-seksjon** - Nye felt i editor
-4. **Vedlegg-funksjonalitet** - Opplasting og visning
-5. **Eksport** - PDF og Word
-6. **Kommentarer** - Samarbeidsfunksjoner
-7. **Versjonshistorikk** - Revisjonssporing
-
----
-
-## Resultat
-
-- **Rene prosedyrer** - Referansedokumenter uten quiz (quiz flyttes til kurs)
-- **Rik metadata** - Kategori, versjon, godkjenning, revisjonsplan
-- **Vedlegg-støtte** - Last opp og koble filer
-- **Profesjonell eksport** - PDF/Word med firmalogo og formatering
-- **Samarbeid** - Kommentarer og versjonshistorikk som Google Docs
-- **Sporbarhet** - Full revisjonshistorikk for compliance
-
+1. **ProcedureViewer.tsx** - Oppdatere for å vise vedlegg og nye blokktyper
+2. **Kurseditor** - Flytte quiz/checkpoint hit
+3. **Godkjenning** - Implementere godkjenningsflyt med approved_by/approved_at
