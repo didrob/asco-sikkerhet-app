@@ -68,13 +68,9 @@ export async function exportToPDF(procedure: ProcedureData): Promise<void> {
   doc.setFillColor(ASCO_TEAL.r, ASCO_TEAL.g, ASCO_TEAL.b);
   doc.rect(0, 0, pageWidth, 35, 'F');
   
-  // Draw ASCO logo (teal circle on white background area)
+  // Draw ASCO logo - single white circle for contrast on teal header
   doc.setFillColor(255, 255, 255);
-  doc.circle(margin + 8, 17.5, 8, 'F');
-  
-  // Draw smaller teal circle inside for the logo effect
-  doc.setFillColor(ASCO_TEAL.r, ASCO_TEAL.g, ASCO_TEAL.b);
-  doc.circle(margin + 8, 17.5, 5, 'F');
+  doc.circle(margin + 8, 17.5, 7, 'F');
   
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);

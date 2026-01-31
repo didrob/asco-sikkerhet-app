@@ -55,7 +55,7 @@ export async function exportToWord(procedure: ProcedureData): Promise<void> {
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: 'ASCO Prosedyrehub',
+                      text: '●  ASCO Prosedyrehub',
                       size: 28,
                       bold: true,
                       color: 'FFFFFF',
