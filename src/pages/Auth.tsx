@@ -158,14 +158,21 @@ export default function Auth() {
         
         {/* Left side - Branding & marketing text */}
         <div className="flex-1 text-center lg:text-left">
-          {/* ASCO Logo */}
-          <div className="mb-8">
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight">
-              <span className="text-white">ASCO</span>
-            </h1>
-            <p className="text-white/60 text-sm font-medium tracking-wider mt-1">
-              Prosedyrehub
-            </p>
+          {/* ASCO Logo - med sirkel */}
+          <div className="mb-8 flex items-center gap-3 justify-center lg:justify-start">
+            {/* Teal Circle */}
+            <div 
+              className="w-12 h-12 rounded-full flex-shrink-0"
+              style={{ backgroundColor: 'hsl(166, 100%, 44%)' }}
+            />
+            <div>
+              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white">
+                ASCO
+              </h1>
+              <p className="text-white/60 text-sm font-medium tracking-wider">
+                Prosedyrehub
+              </p>
+            </div>
           </div>
 
           {/* Hero text matching ASCO style */}
