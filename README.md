@@ -1,4 +1,11 @@
-# Welcome to your Lovable project
+# ASCO Sikkerhet App
+
+En moderne, skybasert plattform for helhetlig håndtering av sikkerhets- og complianceprosesser i organisasjoner.
+
+## 📚 Dokumentasjon
+
+- **[PRODUKTDOKUMENTASJON.md](./PRODUKTDOKUMENTASJON.md)** - Omfattende produktdokumentasjon for presentasjoner og forretningsformål
+- **[SYSTEM_OVERVIEW.md](./SYSTEM_OVERVIEW.md)** - Teknisk systemoversikt for utviklere
 
 ## Project info
 
