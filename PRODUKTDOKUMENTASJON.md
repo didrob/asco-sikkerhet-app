@@ -794,7 +794,7 @@ ASCO Sikkerhet App bruker et sofistikert system for rollebasert tilgangskontroll
 #### Fra Leverandør
 - **Implementeringskonsulent**: Støtte gjennom alle faser
 - **Teknisk support**: Tilgjengelig ved behov
-- **Opplæring**: 3-4 opplæringssesjon
+- **Opplæring**: 3-4 opplæringssesjoner
 
 ### 9.3 Suksessfaktorer
 
