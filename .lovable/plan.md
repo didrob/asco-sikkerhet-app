@@ -1,65 +1,104 @@
 
-# ASCO Brand i PDF/Word-eksport
+# Oppdater ASCO-logo på innloggingssiden og i eksporter
 
 ## Nåværende situasjon
 
-PDF og Word eksport bruker:
-- **Feil farge**: Blå (`#3B82F6`) istedenfor ASCO Teal (`hsl(166, 100%, 44%)`)
-- **Kun tekst**: Skriver "ASCO" som tekst uten logo
-- **Ingen visuell identitet**: Mangler ASCO sin visuelle profil
+Basert på det opplastede bildet er den **riktige ASCO-logoen**:
+- En solid **teal/grønn sirkel** (ASCO Teal `#00E09C`)
+- Teksten "**ASCO**" ved siden av sirkelen
 
-ASCO brand-farger:
-- **ASCO Teal**: `hsl(166, 100%, 44%)` = `#00E09C` (turkis/grønn)
-- **Deep Navy**: `#1a1b26` (mørk bakgrunn)
+**Problemer i dag:**
+
+| Sted | Problem |
+|------|---------|
+| Innloggingsside (`Auth.tsx`) | Bruker kun tekst "ASCO" uten sirkel-logo |
+| PDF-eksport | Tegner to konsentriske sirkler (feil design) |
+| Word-eksport | Kun tekst "ASCO Prosedyrehub" uten sirkel |
 
 ## Løsning
 
-### 1. PDF-eksport (`src/lib/pdf-export.ts`)
+### 1. Innloggingsside (`src/pages/Auth.tsx`)
 
-**Oppdater header-farge til ASCO Teal:**
+Oppdatere logo-seksjonen (linje 162-169) til å inkludere:
+- En **teal sirkel** til venstre for "ASCO" teksten
+- Bruke `logo-light.png` direkte, eller tegne sirkelen med CSS
+
+**Endring:**
+```tsx
+{/* ASCO Logo - med sirkel */}
+<div className="mb-8 flex items-center gap-3 justify-center lg:justify-start">
+  {/* Teal Circle */}
+  <div 
+    className="w-12 h-12 rounded-full"
+    style={{ backgroundColor: 'hsl(166, 100%, 44%)' }}
+  />
+  <div>
+    <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white">
+      ASCO
+    </h1>
+    <p className="text-white/60 text-sm font-medium tracking-wider">
+      Prosedyrehub
+    </p>
+  </div>
+</div>
 ```
-// Før: doc.setFillColor(59, 130, 246); // Blå
-// Etter: doc.setFillColor(0, 224, 156);  // ASCO Teal #00E09C
+
+### 2. PDF-eksport (`src/lib/pdf-export.ts`)
+
+Endre sirkel-tegningen (linje 71-77) til å vise kun én teal sirkel:
+
+**Før (feil):**
+```javascript
+// Tegner hvit sirkel med mindre teal sirkel inni
+doc.setFillColor(255, 255, 255);
+doc.circle(margin + 8, 17.5, 8, 'F');
+doc.setFillColor(ASCO_TEAL.r, ASCO_TEAL.g, ASCO_TEAL.b);
+doc.circle(margin + 8, 17.5, 5, 'F');
 ```
 
-**Legg til ASCO-logo i header:**
-- Konverter `logo-light.png` til base64 for embedding i PDF
-- Plasser logo øverst til venstre i header (hvit logo på teal bakgrunn)
-- Flytt kategori-tekst til høyre for logo
-
-**Oppdater footer:**
-- Legg til "ASCO Prosedyrehub" tekst i footer
-
-### 2. Word-eksport (`src/lib/word-export.ts`)
-
-**Oppdater brand-farger:**
-```
-// Før: color: '3B82F6' (blå)
-// Etter: color: '00E09C' (ASCO Teal)
+**Etter (riktig):**
+```javascript
+// Tegn kun én solid teal sirkel
+doc.setFillColor(255, 255, 255); // Hvit sirkel som bakgrunn (for kontrast på teal header)
+doc.circle(margin + 8, 17.5, 7, 'F');
 ```
 
-**Legg til logo-referanse i header:**
-- Bruk ASCO-logo i dokumenthodet
-- Word-pakken (`docx`) støtter bildeinnsetting via `ImageRun`
+### 3. Word-eksport (`src/lib/word-export.ts`)
 
-### 3. Logo-håndtering
+Legge til sirkel-indikasjon i header-teksten:
 
-Opprette `src/lib/logo-base64.ts`:
-- Eksporter base64-versjon av ASCO-logoen for bruk i PDF
-- jsPDF kan embedde bilder via `addImage()` med base64-data
+**Endring:**
+```typescript
+new TextRun({
+  text: '●  ASCO Prosedyrehub',  // Unicode solid circle
+  size: 28,
+  bold: true,
+  color: 'FFFFFF',
+}),
+```
 
 ## Tekniske endringer
 
 | Fil | Endring |
 |-----|---------|
-| `src/lib/pdf-export.ts` | Endre header-farge til ASCO Teal, legge til logo |
-| `src/lib/word-export.ts` | Endre farger til ASCO Teal, legge til logo i header |
-| `src/lib/logo-base64.ts` | Ny fil med base64-kodet ASCO-logo for embedding |
+| `src/pages/Auth.tsx` | Legg til teal sirkel ved siden av "ASCO" tekst |
+| `src/lib/pdf-export.ts` | Endre til én hvit sirkel (for kontrast mot teal header) |
+| `src/lib/word-export.ts` | Legg til ● symbol før "ASCO Prosedyrehub" |
 
-## Resultat
+## Visuelt resultat
 
-Eksporterte prosedyrer vil ha:
-- ASCO Teal header (`#00E09C`)
-- ASCO-logo øverst til venstre
-- Konsistent visuell identitet med resten av appen
-- Profesjonelt utseende som matcher ASCO-profilen
+**Innloggingsside:**
+```
+   ●  ASCO
+      Prosedyrehub
+```
+
+**PDF/Word header:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ○  ASCO Prosedyrehub                           [KATEGORI]  │
+│     (hvit sirkel + tekst på teal bakgrunn)                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Der `●` = teal sirkel på mørk bakgrunn (innlogging) og `○` = hvit sirkel på teal bakgrunn (eksporter)
