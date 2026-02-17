@@ -33,8 +33,11 @@ import Training from "./pages/training/Training";
 import TrainingHistory from "./pages/training/TrainingHistory";
 import ManageTraining from "./pages/training/ManageTraining";
 import TrainingGroups from "./pages/training/TrainingGroups";
+import TrainingGroupMembers from "./pages/training/TrainingGroupMembers";
 import TrainingOverview from "./pages/training/TrainingOverview";
 import CoursePlayer from "./pages/training/CoursePlayer";
+import CourseEditor from "./pages/training/CourseEditor";
+import CourseAssign from "./pages/training/CourseAssign";
 
 // System pages
 import UserStats from "./pages/system/UserStats";
@@ -82,7 +85,11 @@ const App = () => (
             <Route path="/training" element={<ProtectedWithSite><Training /></ProtectedWithSite>} />
             <Route path="/training/history" element={<ProtectedWithSite><TrainingHistory /></ProtectedWithSite>} />
             <Route path="/training/manage" element={<ProtectedWithSite><ManageTraining /></ProtectedWithSite>} />
+            <Route path="/training/manage/new" element={<ProtectedWithSite><CourseEditor /></ProtectedWithSite>} />
+            <Route path="/training/manage/:id/edit" element={<ProtectedWithSite><CourseEditor /></ProtectedWithSite>} />
+            <Route path="/training/manage/:id/assign" element={<ProtectedWithSite><CourseAssign /></ProtectedWithSite>} />
             <Route path="/training/groups" element={<ProtectedWithSite><TrainingGroups /></ProtectedWithSite>} />
+            <Route path="/training/groups/:groupId" element={<ProtectedWithSite><TrainingGroupMembers /></ProtectedWithSite>} />
             <Route path="/training/overview" element={<ProtectedWithSite><TrainingOverview /></ProtectedWithSite>} />
             <Route path="/training/:courseId/play" element={<ProtectedWithSite><CoursePlayer /></ProtectedWithSite>} />
             
