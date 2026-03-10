@@ -125,12 +125,8 @@ export default function Auth() {
             <p className="text-white/50 text-sm font-medium tracking-wider">Prosedyrehub</p>
           </div>
 
-          <h2 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6">
-            Sikkerhet og{' '}
-            <span className="text-white">
-              Kompetanse
-            </span>{' '}
-            i Fokus
+          <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6">
+            Prosedyrer. Opplæring. Kontroll.
           </h2>
 
           <p className="text-lg text-slate-300 mb-10 max-w-md">
