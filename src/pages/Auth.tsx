@@ -194,7 +194,7 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="login-password" className="text-white/60 text-xs uppercase tracking-wider">Passord</Label>
+                <Label htmlFor="login-password" className="text-slate-300 text-sm font-medium">Passord</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-white/30" />
                   <Input id="login-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClasses} disabled={loading} />
