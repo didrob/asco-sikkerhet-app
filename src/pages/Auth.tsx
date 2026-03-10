@@ -185,7 +185,7 @@ export default function Auth() {
 
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-white/60 text-xs uppercase tracking-wider">E-post</Label>
+                <Label htmlFor="login-email" className="text-slate-300 text-sm font-medium">E-post</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-white/30" />
                   <Input id="login-email" type="email" placeholder="din@epost.no" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClasses} disabled={loading} />
