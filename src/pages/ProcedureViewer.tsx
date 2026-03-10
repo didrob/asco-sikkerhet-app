@@ -350,7 +350,7 @@ export default function ProcedureViewer() {
             )}
 
             {/* Main content */}
-            <Card>
+            <Card className="dark:bg-[#0B0F19] dark:border-white/10">
               <CardContent className="p-6">
                 <DocumentContent blocks={contentBlocks} />
               </CardContent>
