@@ -124,8 +124,7 @@ export default function Auth() {
       {/* Content */}
       <div className="relative z-10 w-full grid lg:grid-cols-2 min-h-screen">
         
-        {/* Left — Branding */}
-        <div className="flex-1 text-center lg:text-left">
+        <div className="flex flex-col justify-center px-8 lg:px-16 xl:px-24 py-12">
           <div className="mb-8 flex items-center gap-3 justify-center lg:justify-start">
             <div className="w-12 h-12 rounded-full flex-shrink-0" style={{ backgroundColor: 'hsl(166, 100%, 44%)', boxShadow: '0 0 30px rgba(0,224,156,0.4)' }} />
             <div>
