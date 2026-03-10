@@ -41,7 +41,7 @@ export function AppHeader() {
   const initials = getInitials(displayName);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card">
+    <header className="sticky top-0 z-50 border-b border-border bg-card dark:glass-panel dark:border-white/10">
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         {/* Mobile Nav + Logo and App Name */}
         <div className="flex items-center gap-3">
