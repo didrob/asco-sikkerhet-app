@@ -122,10 +122,9 @@ export default function Auth() {
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 py-8 flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
+      <div className="relative z-10 w-full grid lg:grid-cols-2 min-h-screen">
         
-        {/* Left — Branding */}
-        <div className="flex-1 text-center lg:text-left">
+        <div className="flex flex-col justify-center px-8 lg:px-16 xl:px-24 py-12">
           <div className="mb-8 flex items-center gap-3 justify-center lg:justify-start">
             <div className="w-12 h-12 rounded-full flex-shrink-0" style={{ backgroundColor: 'hsl(166, 100%, 44%)', boxShadow: '0 0 30px rgba(0,224,156,0.4)' }} />
             <div>
@@ -143,8 +142,7 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* Right — Login card */}
-        <div className="w-full max-w-md">
+        <div className="flex items-center justify-center px-8 lg:px-16 py-12">
           <div
             className="rounded-2xl p-8 backdrop-blur-xl border border-white/[0.08] shadow-2xl"
             style={{ backgroundColor: 'rgba(255,255,255,0.03)', boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.05), 0 25px 50px -12px rgba(0,0,0,0.5)' }}
