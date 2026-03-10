@@ -120,12 +120,9 @@ export default function Auth() {
       <div className="relative z-10 max-w-5xl mx-auto w-full px-6 gap-12 lg:gap-20 items-center grid lg:grid-cols-2 min-h-screen">
         
         <div className="flex flex-col justify-center text-white">
-          <div className="mb-8 flex items-center gap-3">
-            <img src={logoLight} alt="ASCO logo" className="h-12 w-auto flex-shrink-0" />
-            <div>
-              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight">ASCO</h1>
-              <p className="text-white/50 text-sm font-medium tracking-wider">Prosedyrehub</p>
-            </div>
+          <div className="mb-8 flex flex-col items-start gap-2">
+            <img src={logoLight} alt="ASCO" className="h-16 w-auto" />
+            <p className="text-white/50 text-sm font-medium tracking-wider">Prosedyrehub</p>
           </div>
 
           <h2 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6">
