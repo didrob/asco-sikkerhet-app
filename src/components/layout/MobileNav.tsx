@@ -59,8 +59,8 @@ export function MobileNav() {
           <span className="sr-only">Åpne meny</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 overflow-y-auto p-0">
-        <SheetHeader className="border-b border-border p-4">
+        <SheetContent side="left" className="w-72 overflow-y-auto p-0 dark:glass-panel dark:border-white/10">
+        <SheetHeader className="border-b border-border dark:border-white/10 p-4">
           <SheetTitle className="flex items-center gap-2">
             <ThemeLogo className="h-8 w-auto" />
             <span>Prosedyrehub</span>
