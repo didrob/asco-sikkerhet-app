@@ -29,12 +29,12 @@ export function Sidebar() {
     cn(
       'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
       isActive
-        ? 'bg-primary text-primary-foreground'
-        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        ? 'bg-primary text-primary-foreground dark:bg-cyan-500/20 dark:text-cyan-400'
+        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-white/10 dark:hover:text-cyan-300'
     );
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-border bg-card lg:block">
+    <aside className="hidden w-64 shrink-0 border-r border-border bg-card dark:glass-panel dark:border-white/10 lg:block">
       <nav className="flex h-[calc(100vh-4rem)] flex-col gap-2 overflow-y-auto p-4">
         {/* Dashboard */}
         <div className="space-y-1">
@@ -149,7 +149,7 @@ export function Sidebar() {
         )}
 
         {/* Footer */}
-        <div className="mt-auto border-t border-border pt-4">
+        <div className="mt-auto border-t border-border dark:border-white/10 pt-4">
           <p className="px-3 text-xs text-muted-foreground">
             Prosedyrehub v1.0
           </p>

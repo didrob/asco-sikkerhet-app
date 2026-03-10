@@ -14,7 +14,7 @@ import { useSiteContext } from '@/contexts/SiteContext';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useProcedureStats } from '@/hooks/useProcedures';
 import { useUserStats } from '@/hooks/useUserStats';
-import { FileText, CheckCircle2, Clock, Eye, Timer } from 'lucide-react';
+import { FileText, CheckCircle2, FileEdit, Eye, Timer } from 'lucide-react';
 import { formatDuration } from '@/hooks/useUserStats';
 
 const Index = () => {
@@ -26,11 +26,11 @@ const Index = () => {
 
   const isLoading = roleLoading || statsLoading || userStatsLoading;
 
-  // Prepare data for charts
+  // Prepare data for charts - now using document status instead of completion
   const statusData = [
-    { name: 'Fullført', value: procedureStats.completed, color: 'hsl(142 76% 36%)' },
-    { name: 'Påbegynt', value: procedureStats.inProgress, color: 'hsl(217 91% 60%)' },
-    { name: 'Ikke startet', value: procedureStats.notStarted, color: 'hsl(215 16% 47%)' },
+    { name: 'Publisert', value: procedureStats.published, color: 'hsl(142 76% 36%)' },
+    { name: 'Utkast', value: procedureStats.draft, color: 'hsl(45 93% 47%)' },
+    { name: 'Arkivert', value: procedureStats.archived, color: 'hsl(215 16% 47%)' },
   ];
 
   const activityData = userStats?.dailyActivity || [];
@@ -73,16 +73,16 @@ const Index = () => {
               icon={FileText}
             />
             <StatCardWithTrend
-              title="Fullført"
-              value={procedureStats.completed}
+              title="Publisert"
+              value={procedureStats.published}
               icon={CheckCircle2}
               iconClassName="text-green-600"
             />
             <StatCardWithTrend
-              title="Påbegynt"
-              value={procedureStats.inProgress}
-              icon={Clock}
-              iconClassName="text-blue-600"
+              title="Utkast"
+              value={procedureStats.draft}
+              icon={FileEdit}
+              iconClassName="text-yellow-600"
             />
             <StatCardWithTrend
               title="Visninger"

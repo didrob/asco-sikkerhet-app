@@ -1,4 +1,4 @@
-import { FileText, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { FileText, CheckCircle2, FileEdit, Archive } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProcedureStats } from '@/hooks/useProcedures';
 import { useSiteContext } from '@/contexts/SiteContext';
@@ -69,25 +69,25 @@ export function UserStats() {
         description="prosedyrer"
       />
       <StatCard
-        title="Fullført"
-        value={stats.completed}
+        title="Publisert"
+        value={stats.published}
         icon={CheckCircle2}
         iconClassName="text-green-600"
-        description="prosedyrer fullført"
+        description="aktive dokumenter"
       />
       <StatCard
-        title="Påbegynt"
-        value={stats.inProgress}
-        icon={Clock}
-        iconClassName="text-blue-600"
-        description="under arbeid"
+        title="Utkast"
+        value={stats.draft}
+        icon={FileEdit}
+        iconClassName="text-yellow-600"
+        description="under utarbeidelse"
       />
       <StatCard
-        title="Ikke startet"
-        value={stats.notStarted}
-        icon={AlertCircle}
+        title="Arkivert"
+        value={stats.archived}
+        icon={Archive}
         iconClassName="text-muted-foreground"
-        description="venter på deg"
+        description="utgåtte versjoner"
       />
     </div>
   );

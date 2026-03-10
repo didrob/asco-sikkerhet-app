@@ -1,8 +1,10 @@
-import { ChevronDown, User, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, User, LogOut, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeLogo } from '@/components/ThemeLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { MobileNav } from '@/components/layout/MobileNav';
+import { GlobalSearch } from '@/components/layout/GlobalSearch';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -30,6 +32,7 @@ function getInitials(name: string): string {
 }
 
 export function AppHeader() {
+  const [searchOpen, setSearchOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const { currentSite, sites, setCurrentSite } = useSiteContext();
@@ -38,14 +41,14 @@ export function AppHeader() {
   const initials = getInitials(displayName);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card">
+    <header className="sticky top-0 z-50 border-b border-border bg-card dark:glass-panel dark:border-white/10">
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         {/* Mobile Nav + Logo and App Name */}
         <div className="flex items-center gap-3">
           <MobileNav />
           <ThemeLogo className="h-10 w-auto" />
           <div className="hidden sm:block">
-            <h1 className="font-semibold text-foreground">ASCO Prosedyrehub</h1>
+            <h1 className="font-semibold text-foreground dark:text-white">ASCO Prosedyrehub</h1>
             <p className="text-xs text-muted-foreground">Digital sikkerhetsoperasjoner</p>
           </div>
         </div>
@@ -90,8 +93,32 @@ export function AppHeader() {
           </div>
         )}
 
-        {/* User Dropdown and Theme Toggle */}
+        {/* Search, User Dropdown and Theme Toggle */}
         <div className="flex items-center gap-2">
+          {/* Global Search Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSearchOpen(true)}
+            className="hidden sm:flex items-center gap-2 text-muted-foreground"
+          >
+            <Search className="h-4 w-4" />
+            <span className="text-sm">Søk...</span>
+            <kbd className="ml-2 hidden md:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </Button>
+          
+          {/* Mobile search button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchOpen(true)}
+            className="sm:hidden"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
           <ThemeToggle />
           
           <DropdownMenu>
@@ -121,6 +148,9 @@ export function AppHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Global Search Dialog */}
+        <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
       </div>
     </header>
   );
