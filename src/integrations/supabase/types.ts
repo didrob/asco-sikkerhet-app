@@ -370,7 +370,7 @@ export type Database = {
           document_number: string | null
           due_date: string | null
           id: string
-          recurrence_interval: unknown
+          recurrence_interval: string | null
           required_for_roles: string[] | null
           review_date: string | null
           site_id: string
@@ -392,7 +392,7 @@ export type Database = {
           document_number?: string | null
           due_date?: string | null
           id?: string
-          recurrence_interval?: unknown
+          recurrence_interval?: string | null
           required_for_roles?: string[] | null
           review_date?: string | null
           site_id: string
@@ -414,7 +414,7 @@ export type Database = {
           document_number?: string | null
           due_date?: string | null
           id?: string
-          recurrence_interval?: unknown
+          recurrence_interval?: string | null
           required_for_roles?: string[] | null
           review_date?: string | null
           site_id?: string
