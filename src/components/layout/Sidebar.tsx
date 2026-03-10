@@ -34,7 +34,7 @@ export function Sidebar() {
     );
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-border bg-card lg:block">
+    <aside className="hidden w-64 shrink-0 border-r border-border bg-card dark:glass-panel dark:border-white/10 lg:block">
       <nav className="flex h-[calc(100vh-4rem)] flex-col gap-2 overflow-y-auto p-4">
         {/* Dashboard */}
         <div className="space-y-1">
@@ -149,7 +149,7 @@ export function Sidebar() {
         )}
 
         {/* Footer */}
-        <div className="mt-auto border-t border-border pt-4">
+        <div className="mt-auto border-t border-border dark:border-white/10 pt-4">
           <p className="px-3 text-xs text-muted-foreground">
             Prosedyrehub v1.0
           </p>
