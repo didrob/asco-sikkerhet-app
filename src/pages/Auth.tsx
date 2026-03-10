@@ -142,8 +142,7 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* Right — Login card */}
-        <div className="w-full max-w-md">
+        <div className="flex items-center justify-center px-8 lg:px-16 py-12">
           <div
             className="rounded-2xl p-8 backdrop-blur-xl border border-white/[0.08] shadow-2xl"
             style={{ backgroundColor: 'rgba(255,255,255,0.03)', boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.05), 0 25px 50px -12px rgba(0,0,0,0.5)' }}
