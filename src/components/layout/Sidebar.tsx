@@ -149,7 +149,7 @@ export function Sidebar() {
         )}
 
         {/* Footer */}
-        <div className="mt-auto border-t border-border pt-4">
+        <div className="mt-auto border-t border-border dark:border-white/10 pt-4">
           <p className="px-3 text-xs text-muted-foreground">
             Prosedyrehub v1.0
           </p>
