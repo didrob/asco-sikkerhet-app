@@ -48,7 +48,7 @@ export function AppHeader() {
           <MobileNav />
           <ThemeLogo className="h-10 w-auto" />
           <div className="hidden sm:block">
-            <h1 className="font-semibold text-foreground">ASCO Prosedyrehub</h1>
+            <h1 className="font-semibold text-foreground dark:text-white">ASCO Prosedyrehub</h1>
             <p className="text-xs text-muted-foreground">Digital sikkerhetsoperasjoner</p>
           </div>
         </div>
