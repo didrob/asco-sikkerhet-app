@@ -108,7 +108,7 @@ export default function Auth() {
     setShowRequestDialog(false);
   };
 
-  const inputClasses = "pl-10 bg-white/[0.05] border-white/[0.08] backdrop-blur-sm text-white placeholder:text-white/30 focus:border-[hsl(166,100%,44%)]/50 focus:ring-0 focus:shadow-[0_0_15px_rgba(0,224,156,0.1)] transition-all duration-300";
+  const inputClasses = "bg-black/20 border border-white/10 rounded-xl text-white pl-10 px-4 py-3 placeholder:text-white/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all";
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0B0F19' }}>
@@ -185,7 +185,7 @@ export default function Auth() {
 
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-white/60 text-xs uppercase tracking-wider">E-post</Label>
+                <Label htmlFor="login-email" className="text-slate-300 text-sm font-medium">E-post</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-white/30" />
                   <Input id="login-email" type="email" placeholder="din@epost.no" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClasses} disabled={loading} />
@@ -194,7 +194,7 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="login-password" className="text-white/60 text-xs uppercase tracking-wider">Passord</Label>
+                <Label htmlFor="login-password" className="text-slate-300 text-sm font-medium">Passord</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-white/30" />
                   <Input id="login-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClasses} disabled={loading} />
@@ -204,8 +204,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full font-semibold text-[#0B0F19] transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,224,156,0.5)]"
-                style={{ backgroundColor: 'hsl(166, 100%, 44%)', boxShadow: '0 0 20px rgba(0,224,156,0.3)' }}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl py-3 mt-4 hover:opacity-90 hover:scale-[1.02] transition-all duration-200 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
                 disabled={loading}
               >
                 {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logger inn...</> : 'Logg inn'}
@@ -217,7 +216,7 @@ export default function Auth() {
               <Button
                 variant="outline"
                 onClick={() => setShowRequestDialog(true)}
-                className="w-full bg-white/[0.03] border-white/[0.1] text-white/70 hover:bg-white/[0.08] hover:text-white hover:border-white/[0.15] transition-all duration-300"
+                className="w-full bg-white/[0.03] border-white/[0.1] text-purple-400 hover:bg-white/[0.08] hover:text-purple-300 hover:border-white/[0.15] transition-all duration-300"
               >
                 Be om tilgang
               </Button>
