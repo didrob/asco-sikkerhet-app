@@ -122,7 +122,7 @@ export default function Auth() {
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
       {/* Content */}
-      <div className="relative z-10 w-full grid lg:grid-cols-2 min-h-screen">
+      <div className="relative z-10 max-w-5xl mx-auto w-full px-6 gap-12 lg:gap-20 items-center grid lg:grid-cols-2 min-h-screen">
         
         <div className="flex flex-col justify-center px-8 lg:px-16 py-12 text-white">
           <div className="mb-8 flex items-center gap-3">
