@@ -108,7 +108,7 @@ export default function Auth() {
     setShowRequestDialog(false);
   };
 
-  const inputClasses = "bg-black/20 border border-white/10 rounded-xl text-white pl-10 px-4 py-3 placeholder:text-white/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all";
+  const inputClasses = "bg-black/20 border border-white/10 rounded-xl text-white pl-10 px-4 py-3 placeholder:text-white/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all";
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-slate-950">
@@ -134,7 +134,7 @@ export default function Auth() {
 
           <h2 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6">
             Sikkerhet og{' '}
-            <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-300 via-cyan-300 to-white bg-clip-text text-transparent">
               Kompetanse
             </span>{' '}
             i Fokus
@@ -203,7 +203,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl py-3 mt-4 hover:opacity-90 hover:scale-[1.02] transition-all duration-200 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl py-3 mt-4 hover:opacity-90 hover:scale-[1.02] transition-all duration-200 shadow-[0_0_20px_rgba(14,165,233,0.4)]"
                 disabled={loading}
               >
                 {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logger inn...</> : 'Logg inn'}
@@ -215,7 +215,7 @@ export default function Auth() {
               <Button
                 variant="outline"
                 onClick={() => setShowRequestDialog(true)}
-                className="w-full bg-white/[0.03] border-white/[0.1] text-purple-400 hover:bg-white/[0.08] hover:text-purple-300 hover:border-white/[0.15] transition-all duration-300"
+                className="w-full bg-white/[0.03] border-white/[0.1] text-sky-400 hover:bg-white/[0.08] hover:text-sky-300 hover:border-white/[0.15] transition-all duration-300"
               >
                 Be om tilgang
               </Button>
