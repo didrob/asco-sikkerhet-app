@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, AlertCircle, User, Building2, Loader2, CheckCircle2, FileText, GraduationCap, ShieldCheck } from 'lucide-react';
 import { useCreateAccessRequest } from '@/hooks/useAccessRequests';
+import logoLight from '@/assets/logo-light.png';
 import {
   Dialog,
   DialogContent,
