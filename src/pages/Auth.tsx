@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, AlertCircle, User, Building2, Loader2, CheckCircle2, FileText, GraduationCap, ShieldCheck } from 'lucide-react';
 import { useCreateAccessRequest } from '@/hooks/useAccessRequests';
+import logoLight from '@/assets/logo-light.png';
 import {
   Dialog,
   DialogContent,
@@ -125,7 +126,7 @@ export default function Auth() {
         
         <div className="flex flex-col justify-center text-white">
           <div className="mb-8 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full flex-shrink-0" style={{ backgroundColor: 'hsl(166, 100%, 44%)', boxShadow: '0 0 30px rgba(0,224,156,0.4)' }} />
+            <img src={logoLight} alt="ASCO logo" className="h-12 w-auto flex-shrink-0" />
             <div>
               <h1 className="text-4xl lg:text-5xl font-bold tracking-tight">ASCO</h1>
               <p className="text-white/50 text-sm font-medium tracking-wider">Prosedyrehub</p>
