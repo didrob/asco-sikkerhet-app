@@ -134,7 +134,7 @@ export default function Auth() {
 
           <h2 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6">
             Sikkerhet og{' '}
-            <span className="bg-gradient-to-r <span className="bg-gradient-to-r from-blue-300 via-cyan-300 to-white bg-clip-text text-transparent"> bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-300 via-cyan-300 to-white bg-clip-text text-transparent">
               Kompetanse
             </span>{' '}
             i Fokus
