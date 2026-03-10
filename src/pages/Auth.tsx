@@ -203,7 +203,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl py-3 mt-4 hover:opacity-90 hover:scale-[1.02] transition-all duration-200 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl py-3 mt-4 hover:opacity-90 hover:scale-[1.02] transition-all duration-200 shadow-[0_0_20px_rgba(14,165,233,0.4)]"
                 disabled={loading}
               >
                 {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logger inn...</> : 'Logg inn'}
