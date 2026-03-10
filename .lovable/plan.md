@@ -1,165 +1,48 @@
 
 
-# Komplett kursflyt: Fra opprettelse til utsendelse
+# Redesign Auth.tsx: Modern Glassmorphism Login
 
-## Hva som allerede finnes
+## Endringer i `src/pages/Auth.tsx`
 
-Dere har allerede et solid fundament:
-- **Kursadministrasjon** (`ManageTraining.tsx`): Opprett, rediger, publiser og arkiver kurs
-- **Kursgrupper** (`TrainingGroups.tsx`): Opprett grupper og legg til medlemmer
-- **Kurstildeling** (`useTrainingAssignments.ts`): Tildel kurs til brukere/grupper med frist
-- **E-postutsendelse** (`EmailComposer.tsx`): Send invitasjoner via lokal e-postklient med BCC
-- **Kursavspiller** (`CoursePlayer.tsx`): Kahoot-inspirert quiz med flere oppgavetyper
-- **Kurstyper** i databasen: `theoretical`, `practical`, `video`, `mixed`
-- **Min opplaring** (`Training.tsx`): Brukerens tildelte kurs
+Erstatte hele return-blokken med et nytt premium glassmorphism-design:
 
-## Hva som mangler for en komplett flyt
+### 1. Global bakgrunn & glødende sirkler
+- Hovedcontainer: `min-h-screen w-full relative overflow-hidden bg-[#0B0F19]`
+- Fjerne bakgrunnsbildet (`authBackground`) og navy overlay
+- Legge til 3-4 absolutt posisjonerte uskarpe sirkler:
+  - **Lilla** øverst til venstre: `w-[600px] h-[600px] bg-purple-600/30 blur-[120px] -top-40 -left-40`
+  - **Dyp blå** nederst til høyre: `w-[500px] h-[500px] bg-blue-700/20 blur-[120px] -bottom-40 -right-40`
+  - **Cyan** i midten: `w-[400px] h-[400px] bg-cyan-500/10 blur-[120px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`
+  - **Teal** (ASCO-farge) subtil glød bak login-kortet: `w-[300px] h-[300px] bg-[hsl(166,100%,44%)]/10 blur-[100px]`
 
-### 1. Kursredigering (Course Editor)
+### 2. Login-kort med glassmorphism
+- `backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl shadow-2xl`
+- Subtil indre glød via `shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]`
 
-**Ny side: `/training/manage/new` og `/training/manage/:id/edit`**
+### 3. Input-felt med glass-stil
+- `bg-white/[0.05] border-white/[0.08] backdrop-blur-sm`
+- Focus-state med teal glow: `focus:border-[hsl(166,100%,44%)]/50 focus:shadow-[0_0_15px_rgba(0,224,156,0.1)]`
 
-Det finnes ingen kursredigerer i dag. HMS-representanten trenger et skjema for a:
-- Fylle inn tittel, beskrivelse, kurstype
-- Velge bestattprosent (pass_threshold)
-- Koble til prosedyrer (velg fra eksisterende)
-- Legge til innholdsblokker (quiz-oppgaver) med en visuell editor
-- Velge hvilke roller kurset er obligatorisk for
+### 4. CTA-knapp med glow
+- Beholde ASCO teal farge
+- Legge til `shadow-[0_0_20px_rgba(0,224,156,0.3)]` og hover: `shadow-[0_0_30px_rgba(0,224,156,0.5)]`
+- Smooth transition på hover
 
-**Forslag til implementering:**
-- Steg-basert skjema (wizard) med tabs: "Grunninfo" -> "Innhold" -> "Innstillinger"
-- Innholdsblokk-editor for a legge til flervalg, hotspot, rekkefølge, scenario osv.
-- Forhåndsvisning av kurset for det publiseres
+### 5. Layout og branding
+- Beholde split-screen layout (venstre: branding, høyre: login)
+- ASCO-logo med teal sirkel beholdes
+- Oppdatere typografi til å matche glassmorphism-estetikken
+- Fjerne `authBackground` import (ikke lenger brukt)
 
-### 2. Kursutsendelsesside (Course Assignment Page)
+### 6. Subtile detaljer
+- Dot-grid eller noise overlay med svært lav opacity for tekstur
+- Animert gradient-border på login-kortet (valgfritt, kan gjøres med CSS)
 
-**Ny side: `/training/manage/:id/assign`**
+### Filer som endres
 
-Lenken finnes allerede i ManageTraining, men siden mangler. Denne skal:
-- Vise kursinformasjon
-- La HMS-rep velge grupper og/eller enkeltbrukere
-- Sette frist (due_date)
-- Generere en delbar kurslenke (`/training/:courseId/play`)
-- Sende invitasjon via e-postklient (gjenbruke `EmailComposer`)
-- Vise hvem som allerede er tildelt
+| Fil | Endring |
+|-----|---------|
+| `src/pages/Auth.tsx` | Komplett redesign av JSX med glassmorphism |
 
-### 3. Gruppemedlemshåndtering
+All logikk (state, handlers, validation, dialog) beholdes uendret. Kun visuell endring.
 
-**Ny side: `/training/groups/:id`**
-
-Lenken finnes i TrainingGroups, men siden mangler. Denne skal:
-- Vise alle medlemmer i gruppen
-- Legge til nye medlemmer (søk blant brukere på site)
-- Fjerne medlemmer
-- Vise medlemsdetaljer (navn, stilling, avdeling)
-
-## Foreslatt komplett flyt
-
-```text
-HMS-representant logger inn
-        |
-        v
-[Administrer kurs] --> [+ Nytt kurs]
-        |                     |
-        |                     v
-        |            Steg 1: Grunninfo
-        |            - Tittel, beskrivelse
-        |            - Kurstype (teoretisk/praktisk/video/kombinert)
-        |            - Koble til prosedyrer
-        |                     |
-        |                     v
-        |            Steg 2: Innhold
-        |            - Legg til quiz-blokker
-        |            - Flervalg, hotspot, rekkefølge, scenario
-        |            - Forhåndsvisning
-        |                     |
-        |                     v
-        |            Steg 3: Innstillinger
-        |            - Bestattprosent
-        |            - Obligatorisk for roller
-        |            - Lagre som utkast eller publiser
-        |                     |
-        v                     v
-[Kursoversikt] <--- Kurs opprettet!
-        |
-        v
-[Tildel brukere] (per kurs)
-        |
-        +---> Velg grupper (Kranforere, Mek. verksted, etc.)
-        |
-        +---> Velg enkeltbrukere
-        |
-        +---> Sett frist
-        |
-        +---> Kopier kurslenke (for deling i Teams/Slack)
-        |
-        v
-[Send invitasjon via e-post]
-        |
-        +---> Forhåndsvisning av e-post
-        +---> BCC-valg for personvern
-        +---> Apne e-postklient
-        |
-        v
-Brukere mottar e-post med lenke
-        |
-        v
-[Mine kurs] --> [Start kurs] --> [Quiz/oppgaver] --> [Resultat]
-```
-
-## Teknisk implementeringsplan
-
-### Steg 1: Gruppemedlemsside (`/training/groups/:id`)
-
-**Ny fil:** `src/pages/training/TrainingGroupMembers.tsx`
-- Hente gruppedetaljer med `useTrainingGroup(groupId)`
-- Vise medlemsliste med profiler
-- Legge til brukere via sok (hente fra `profiles`-tabellen filtrert på site)
-- Fjerne medlemmer
-- Bruke eksisterende hooks: `useAddGroupMember`, `useRemoveGroupMember`, `useAddGroupMembers`
-
-**Rute:** Legge til `/training/groups/:groupId` i `App.tsx`
-
-### Steg 2: Kursredigerer (`/training/manage/new` og `/training/manage/:id/edit`)
-
-**Ny fil:** `src/pages/training/CourseEditor.tsx`
-- Tab-basert layout: Grunninfo | Innhold | Innstillinger
-- **Grunninfo-tab:** Tittel, beskrivelse, kurstype (select), prosedyre-kobling (multi-select)
-- **Innhold-tab:** Visuell blokk-editor for quiz-oppgaver
-  - Knapp for a legge til ny blokk (flervalg, hotspot, rekkefølge, scenario)
-  - Redigering av hver blokk inline
-  - Drag-and-drop rekkefølge (valgfritt, kan starte uten)
-- **Innstillinger-tab:** Bestattprosent (slider), obligatoriske roller (checkboxes)
-- Bruke `useCreateTrainingCourse` og `useUpdateTrainingCourse`
-
-**Ny komponent:** `src/components/training/ContentBlockEditor.tsx`
-- Skjema for a redigere en enkelt quiz-blokk
-- Stootte for alle typer i `QuizBlockType`
-
-### Steg 3: Kursutsendelsesside (`/training/manage/:id/assign`)
-
-**Ny fil:** `src/pages/training/CourseAssign.tsx`
-- Vise kursinfo (tittel, type, status)
-- Gruppevelger (checkbox-liste over grupper med medlemstall)
-- Enkeltbruker-søk og -valg
-- Datepicker for frist
-- "Kopier kurslenke"-knapp som kopierer `{origin}/training/{courseId}/play`
-- Integrere `EmailComposer` for utsendelse
-- Vise tabell over eksisterende tildelinger med status
-- Bruke `useCreateAssignments`, `useCourseAssignments`, `useMarkAssignmentsSent`
-
-### Steg 4: Oppdatere ruting og navigasjon
-
-**`App.tsx`:** Legge til nye ruter:
-- `/training/manage/new` -> `CourseEditor`
-- `/training/manage/:id/edit` -> `CourseEditor`
-- `/training/manage/:id/assign` -> `CourseAssign`
-- `/training/groups/:groupId` -> `TrainingGroupMembers`
-
-## Anbefalt rekkefølge
-
-1. **Gruppemedlemsside** - enklest, bruker eksisterende hooks
-2. **Kursredigerer** - kjernefunksjonalitet for a lage kurs
-3. **Kursutsendelsesside** - kobler alt sammen med e-post og lenkedeling
-
-Hver del kan implementeres og testes separat.
