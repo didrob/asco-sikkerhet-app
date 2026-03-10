@@ -47,8 +47,8 @@ export function MobileNav() {
     cn(
       'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
       isActive
-        ? 'bg-primary text-primary-foreground'
-        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        ? 'bg-primary text-primary-foreground dark:bg-cyan-500/20 dark:text-cyan-400'
+        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-white/10 dark:hover:text-cyan-300'
     );
 
   return (
@@ -59,8 +59,8 @@ export function MobileNav() {
           <span className="sr-only">Åpne meny</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 overflow-y-auto p-0">
-        <SheetHeader className="border-b border-border p-4">
+        <SheetContent side="left" className="w-72 overflow-y-auto p-0 dark:glass-panel dark:border-white/10">
+        <SheetHeader className="border-b border-border dark:border-white/10 p-4">
           <SheetTitle className="flex items-center gap-2">
             <ThemeLogo className="h-8 w-auto" />
             <span>Prosedyrehub</span>
@@ -181,7 +181,7 @@ export function MobileNav() {
           )}
 
           {/* Footer */}
-          <div className="mt-auto border-t border-border pt-4">
+          <div className="mt-auto border-t border-border dark:border-white/10 pt-4">
             <p className="px-3 text-xs text-muted-foreground">
               Prosedyrehub v1.0
             </p>
