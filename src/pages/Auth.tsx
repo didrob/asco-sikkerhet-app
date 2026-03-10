@@ -112,14 +112,9 @@ export default function Auth() {
   const inputClasses = "bg-black/20 border border-white/10 rounded-xl text-white pl-10 px-4 py-3 placeholder:text-white/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all";
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-slate-950">
-      {/* Glowing orbs — pure blue tones only */}
-      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-cyan-500/20 blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-sky-600/20 blur-[120px] pointer-events-none" />
-
-      {/* Dot grid overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+    <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-[#0B0F19] bg-[url('/auth-bg.png')] bg-cover bg-center bg-no-repeat">
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto w-full px-6 gap-12 lg:gap-20 items-center grid lg:grid-cols-2 min-h-screen">
