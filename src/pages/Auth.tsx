@@ -108,7 +108,7 @@ export default function Auth() {
     setShowRequestDialog(false);
   };
 
-  const inputClasses = "pl-10 bg-white/[0.05] border-white/[0.08] backdrop-blur-sm text-white placeholder:text-white/30 focus:border-[hsl(166,100%,44%)]/50 focus:ring-0 focus:shadow-[0_0_15px_rgba(0,224,156,0.1)] transition-all duration-300";
+  const inputClasses = "bg-black/20 border border-white/10 rounded-xl text-white pl-10 px-4 py-3 placeholder:text-white/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all";
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0B0F19' }}>
