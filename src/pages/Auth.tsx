@@ -111,12 +111,11 @@ export default function Auth() {
   const inputClasses = "bg-black/20 border border-white/10 rounded-xl text-white pl-10 px-4 py-3 placeholder:text-white/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all";
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0B0F19' }}>
-      {/* Glowing orbs */}
-      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-50 pointer-events-none" style={{ background: 'rgba(147, 51, 234, 0.3)', filter: 'blur(120px)' }} />
-      <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full opacity-50 pointer-events-none" style={{ background: 'rgba(29, 78, 216, 0.2)', filter: 'blur(120px)' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-50 pointer-events-none" style={{ background: 'rgba(6, 182, 212, 0.1)', filter: 'blur(120px)' }} />
-      <div className="absolute top-1/2 right-[20%] -translate-y-1/2 w-[300px] h-[300px] rounded-full opacity-50 pointer-events-none" style={{ background: 'hsla(166, 100%, 44%, 0.1)', filter: 'blur(100px)' }} />
+    <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-slate-950">
+      {/* Glowing orbs — pure blue tones only */}
+      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-cyan-500/20 blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-sky-600/20 blur-[120px] pointer-events-none" />
 
       {/* Dot grid overlay */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
