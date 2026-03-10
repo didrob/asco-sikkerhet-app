@@ -127,7 +127,7 @@ export default function Auth() {
 
           <h2 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6">
             Sikkerhet og{' '}
-            <span className="bg-gradient-to-r from-blue-300 via-cyan-300 to-white bg-clip-text text-transparent">
+            <span className="text-white">
               Kompetanse
             </span>{' '}
             i Fokus
@@ -208,7 +208,7 @@ export default function Auth() {
               <Button
                 variant="outline"
                 onClick={() => setShowRequestDialog(true)}
-                className="w-full bg-white/[0.03] border-white/[0.1] text-sky-400 hover:bg-white/[0.08] hover:text-sky-300 hover:border-white/[0.15] transition-all duration-300"
+                className="w-full bg-white/[0.03] border-white/[0.1] text-white hover:bg-white/[0.08] hover:text-white/80 hover:border-white/[0.15] transition-all duration-300"
               >
                 Be om tilgang
               </Button>
