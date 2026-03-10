@@ -215,7 +215,7 @@ export default function Auth() {
               <Button
                 variant="outline"
                 onClick={() => setShowRequestDialog(true)}
-                className="w-full bg-white/[0.03] border-white/[0.1] text-purple-400 hover:bg-white/[0.08] hover:text-purple-300 hover:border-white/[0.15] transition-all duration-300"
+                className="w-full bg-white/[0.03] border-white/[0.1] text-sky-400 hover:bg-white/[0.08] hover:text-sky-300 hover:border-white/[0.15] transition-all duration-300"
               >
                 Be om tilgang
               </Button>
