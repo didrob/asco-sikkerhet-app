@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, AlertCircle, User, Building2, Loader2, CheckCircle2, FileText, GraduationCap, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, AlertCircle, User, Building2, Loader2, CheckCircle2 } from 'lucide-react';
 import { useCreateAccessRequest } from '@/hooks/useAccessRequests';
 import logoLight from '@/assets/logo-light.png';
 import {
@@ -112,11 +112,7 @@ export default function Auth() {
   const inputClasses = "bg-black/20 border border-white/10 rounded-xl text-white pl-10 pr-4 py-3 placeholder:text-white/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all";
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-[#0B0F19] bg-[url('/auth-bg.png')] bg-cover bg-center bg-no-repeat">
-      {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-
-      {/* Content */}
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#1a1f2e]">
       <div className="relative z-10 max-w-5xl mx-auto w-full px-6 gap-12 lg:gap-20 items-center grid lg:grid-cols-2 min-h-screen">
         
         <div className="flex flex-col justify-center text-white">
@@ -126,46 +122,17 @@ export default function Auth() {
           </div>
 
           <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6">
-            Prosedyrer. Opplæring. Kontroll.
+            Digital<br />
+            <span className="text-sky-400">sikkerhetsoperasjoner</span>
           </h2>
 
           <p className="text-lg text-slate-300 mb-10 max-w-md">
-            Din komplette enterprise-plattform for sikkerhetsprosedyrer, opplæring og compliance.
+            Administrer prosedyrer, opplæring og sertifiseringer på én plattform. Sikker, effektiv og alltid tilgjengelig.
           </p>
-
-          <div className="space-y-4">
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 max-w-md flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,156,0.15)' }}>
-                <FileText className="h-5 w-5" style={{ color: 'hsl(166, 100%, 44%)' }} />
-              </div>
-              <div>
-                <p className="font-semibold text-sm">Digitale Prosedyrer</p>
-                <p className="text-xs text-slate-400">Sporing og signering i sanntid</p>
-              </div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 max-w-md flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,156,0.15)' }}>
-                <GraduationCap className="h-5 w-5" style={{ color: 'hsl(166, 100%, 44%)' }} />
-              </div>
-              <div>
-                <p className="font-semibold text-sm">Kurs og Sertifisering</p>
-                <p className="text-xs text-slate-400">Automatisert opplæringsløp</p>
-              </div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 max-w-md flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,156,0.15)' }}>
-                <ShieldCheck className="h-5 w-5" style={{ color: 'hsl(166, 100%, 44%)' }} />
-              </div>
-              <div>
-                <p className="font-semibold text-sm">Revisjon og Kontroll</p>
-                <p className="text-xs text-slate-400">Fullt samsvar og historikk</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center justify-center p-4 lg:p-8">
-          <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)]">
+          <div className="w-full max-w-md bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-white">Logg inn</h3>
               <p className="text-white/40 text-sm mt-1">Logg inn for å fortsette til ditt dashboard</p>
