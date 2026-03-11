@@ -118,17 +118,18 @@ export default function Auth() {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-[url('/auth-bg.png')] bg-cover bg-center bg-no-repeat">
-      <div className="min-h-screen w-full bg-black/40 flex items-center justify-center">
-        <div className="max-w-5xl mx-auto w-full px-6 gap-12 lg:gap-20 items-center grid lg:grid-cols-2 min-h-screen">
+    <div className="min-h-screen w-full bg-[url('/auth-bg.png')] bg-cover bg-center bg-no-repeat relative">
+      {/* Logo — absolute top-left */}
+      <div className="absolute top-6 left-8 z-20 flex flex-col items-start gap-1">
+        <img src={logoLight} alt="ASCO" className="h-16 w-auto" />
+        <p className="text-white/50 text-sm font-medium tracking-wider">Prosedyrehub</p>
+      </div>
+
+      <div className="min-h-screen w-full bg-black/50 flex items-center justify-center">
+        <div className="w-full max-w-7xl mx-auto px-6 lg:pl-16 gap-12 lg:gap-20 items-center grid lg:grid-cols-[3fr_2fr] min-h-screen">
           
           {/* Left column */}
-          <div className="flex flex-col justify-center text-white">
-            <div className="mb-8 flex flex-col items-start gap-2">
-              <img src={logoLight} alt="ASCO" className="h-16 w-auto" />
-              <p className="text-white/50 text-sm font-medium tracking-wider">Prosedyrehub</p>
-            </div>
-
+          <div className="flex flex-col justify-center text-white pt-24 lg:pt-0">
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6">
               Prosedyrer.<br />
               Opplæring.<br />
@@ -139,7 +140,7 @@ export default function Auth() {
               Administrer prosedyrer, opplæring og sertifiseringer på én plattform. Sikker, effektiv og alltid tilgjengelig.
             </p>
 
-            <div className="space-y-4">
+            <div className="hidden md:flex flex-col space-y-4">
               {features.map((f) => (
                 <div key={f.title} className="flex items-start gap-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
                   <div className="bg-sky-500/20 p-2 rounded-lg">
@@ -156,13 +157,13 @@ export default function Auth() {
 
           {/* Right column — login card */}
           <div className="flex items-center justify-center p-4 lg:p-8">
-            <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 shadow-2xl">
+            <div className="w-full min-w-0 lg:min-w-[400px] max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-10 shadow-2xl">
               <div className="mb-6">
                 <h3 className="text-xl font-semibold text-white">Logg inn</h3>
                 <p className="text-white/40 text-sm mt-1">Logg inn for å fortsette til ditt dashboard</p>
               </div>
 
-              <form onSubmit={handleSignIn} className="space-y-4">
+              <form onSubmit={handleSignIn} className="space-y-5">
                 <div className="space-y-2">
                   <Label htmlFor="login-email" className="text-slate-300 text-sm font-medium">E-post</Label>
                   <div className="relative">
