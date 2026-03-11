@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, AlertCircle, User, Building2, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, AlertCircle, User, Building2, Loader2, CheckCircle2, FileText, GraduationCap, ShieldCheck } from 'lucide-react';
 import { useCreateAccessRequest } from '@/hooks/useAccessRequests';
 import logoLight from '@/assets/logo-light.png';
 import {
@@ -111,70 +111,95 @@ export default function Auth() {
 
   const inputClasses = "bg-black/20 border border-white/10 rounded-xl text-white pl-10 pr-4 py-3 placeholder:text-white/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all";
 
+  const features = [
+    { icon: FileText, title: 'Digitale Prosedyrer', desc: 'Sanntidssporing og versjonskontroll' },
+    { icon: GraduationCap, title: 'Kurs og Sertifisering', desc: 'Automatisert opplæringsløp' },
+    { icon: ShieldCheck, title: 'Revisjon og Kontroll', desc: 'Samsvar og komplett historikk' },
+  ];
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#1a1f2e]">
-      <div className="relative z-10 max-w-5xl mx-auto w-full px-6 gap-12 lg:gap-20 items-center grid lg:grid-cols-2 min-h-screen">
-        
-        <div className="flex flex-col justify-center text-white">
-          <div className="mb-8 flex flex-col items-start gap-2">
-            <img src={logoLight} alt="ASCO" className="h-16 w-auto" />
-            <p className="text-white/50 text-sm font-medium tracking-wider">Prosedyrehub</p>
-          </div>
-
-          <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6">
-            Digital<br />
-            <span className="text-sky-400">sikkerhetsoperasjoner</span>
-          </h2>
-
-          <p className="text-lg text-slate-300 mb-10 max-w-md">
-            Administrer prosedyrer, opplæring og sertifiseringer på én plattform. Sikker, effektiv og alltid tilgjengelig.
-          </p>
-        </div>
-
-        <div className="flex items-center justify-center p-4 lg:p-8">
-          <div className="w-full max-w-md bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white">Logg inn</h3>
-              <p className="text-white/40 text-sm mt-1">Logg inn for å fortsette til ditt dashboard</p>
+    <div className="min-h-screen w-full bg-[url('/auth-bg.png')] bg-cover bg-center bg-no-repeat">
+      <div className="min-h-screen w-full bg-black/40 flex items-center justify-center">
+        <div className="max-w-5xl mx-auto w-full px-6 gap-12 lg:gap-20 items-center grid lg:grid-cols-2 min-h-screen">
+          
+          {/* Left column */}
+          <div className="flex flex-col justify-center text-white">
+            <div className="mb-8 flex flex-col items-start gap-2">
+              <img src={logoLight} alt="ASCO" className="h-16 w-auto" />
+              <p className="text-white/50 text-sm font-medium tracking-wider">Prosedyrehub</p>
             </div>
 
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-slate-300 text-sm font-medium">E-post</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-white/30" />
-                  <Input id="login-email" type="email" placeholder="din@epost.no" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClasses} disabled={loading} />
+            <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6">
+              Prosedyrer.<br />
+              Opplæring.<br />
+              Kontroll.
+            </h2>
+
+            <p className="text-lg text-slate-300 mb-10 max-w-md">
+              Administrer prosedyrer, opplæring og sertifiseringer på én plattform. Sikker, effektiv og alltid tilgjengelig.
+            </p>
+
+            <div className="space-y-4">
+              {features.map((f) => (
+                <div key={f.title} className="flex items-start gap-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
+                  <div className="bg-sky-500/20 p-2 rounded-lg">
+                    <f.icon className="h-5 w-5 text-sky-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold text-sm">{f.title}</h4>
+                    <p className="text-white/50 text-xs mt-0.5">{f.desc}</p>
+                  </div>
                 </div>
-                {errors.email && <p className="flex items-center gap-1 text-sm text-red-400"><AlertCircle className="h-3 w-3" />{errors.email}</p>}
+              ))}
+            </div>
+          </div>
+
+          {/* Right column — login card */}
+          <div className="flex items-center justify-center p-4 lg:p-8">
+            <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 shadow-2xl">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white">Logg inn</h3>
+                <p className="text-white/40 text-sm mt-1">Logg inn for å fortsette til ditt dashboard</p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="login-password" className="text-slate-300 text-sm font-medium">Passord</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-white/30" />
-                  <Input id="login-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClasses} disabled={loading} />
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email" className="text-slate-300 text-sm font-medium">E-post</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-white/30" />
+                    <Input id="login-email" type="email" placeholder="din@epost.no" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClasses} disabled={loading} />
+                  </div>
+                  {errors.email && <p className="flex items-center gap-1 text-sm text-red-400"><AlertCircle className="h-3 w-3" />{errors.email}</p>}
                 </div>
-                {errors.password && <p className="flex items-center gap-1 text-sm text-red-400"><AlertCircle className="h-3 w-3" />{errors.password}</p>}
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-password" className="text-slate-300 text-sm font-medium">Passord</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-white/30" />
+                    <Input id="login-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClasses} disabled={loading} />
+                  </div>
+                  {errors.password && <p className="flex items-center gap-1 text-sm text-red-400"><AlertCircle className="h-3 w-3" />{errors.password}</p>}
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl py-3 mt-4 hover:opacity-90 hover:scale-[1.02] transition-all duration-200 shadow-[0_0_20px_rgba(14,165,233,0.4)]"
+                  disabled={loading}
+                >
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logger inn...</> : 'Logg inn'}
+                </Button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t border-white/[0.06] text-center">
+                <p className="text-sm text-white/30 mb-3">Har du ikke tilgang?</p>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRequestDialog(true)}
+                  className="w-full bg-white/[0.03] border-white/[0.1] text-white hover:bg-white/[0.08] hover:text-white/80 hover:border-white/[0.15] transition-all duration-300"
+                >
+                  Be om tilgang
+                </Button>
               </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl py-3 mt-4 hover:opacity-90 hover:scale-[1.02] transition-all duration-200 shadow-[0_0_20px_rgba(14,165,233,0.4)]"
-                disabled={loading}
-              >
-                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logger inn...</> : 'Logg inn'}
-              </Button>
-            </form>
-
-            <div className="mt-6 pt-6 border-t border-white/[0.06] text-center">
-              <p className="text-sm text-white/30 mb-3">Har du ikke tilgang?</p>
-              <Button
-                variant="outline"
-                onClick={() => setShowRequestDialog(true)}
-                className="w-full bg-white/[0.03] border-white/[0.1] text-white hover:bg-white/[0.08] hover:text-white/80 hover:border-white/[0.15] transition-all duration-300"
-              >
-                Be om tilgang
-              </Button>
             </div>
           </div>
         </div>
